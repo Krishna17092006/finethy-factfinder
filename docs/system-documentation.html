@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FINETHY Fact-Finder — System Documentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue: #2f5aa8;
+      --orange: #f08a0c;
+      --cyan: #00bbee;
+      --dark: #1f2531;
+      --body: #4a5568;
+      --muted: #94a3b8;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --green: #22c55e;
+      --page-bg: #ffffff;
+      --card-bg: #f8fafc;
+      --formula-bg: #eef2ff;
+      --formula-border: #6366f1;
+    }
+
+    @page {
+      margin: 0.6in 0.7in;
+      size: A4;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: var(--body);
+      line-height: 1.7;
+      font-size: 10.5pt;
+      background: var(--page-bg);
+    }
+
+    /* COVER PAGE */
+    .cover {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: linear-gradient(135deg, #1e3a6e 0%, #2f5aa8 40%, #00bbee 100%);
+      color: white;
+      padding: 3rem;
+      page-break-after: always;
+    }
+    .cover h1 {
+      font-size: 42pt;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      margin-bottom: 0.5rem;
+    }
+    .cover .subtitle {
+      font-size: 16pt;
+      font-weight: 300;
+      opacity: 0.9;
+      margin-bottom: 2rem;
+    }
+    .cover .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 100px;
+      padding: 0.5rem 2rem;
+      font-size: 10pt;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 3rem;
+    }
+    .cover .version {
+      font-size: 9pt;
+      opacity: 0.6;
+      margin-top: 3rem;
+    }
+
+    /* TOC */
+    .toc {
+      page-break-after: always;
+      padding: 3rem 0;
+    }
+    .toc h2 {
+      font-size: 22pt;
+      color: var(--blue);
+      margin-bottom: 2rem;
+      font-weight: 700;
+    }
+    .toc-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.7rem 0;
+      border-bottom: 1px dotted #cbd5e1;
+      font-size: 11pt;
+    }
+    .toc-item .num {
+      color: var(--blue);
+      font-weight: 700;
+      margin-right: 0.75rem;
+      min-width: 2rem;
+    }
+    .toc-item .title { font-weight: 600; color: var(--dark); flex: 1; }
+    .toc-item .page { color: var(--muted); font-weight: 500; }
+
+    /* SECTION HEADERS */
+    .section {
+      page-break-inside: avoid;
+      margin-bottom: 2rem;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 3px solid var(--blue);
+    }
+    .section-num {
+      background: var(--blue);
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14pt;
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-size: 18pt;
+      font-weight: 700;
+      color: var(--dark);
+    }
+    .page-break { page-break-before: always; }
+
+    /* SUBSECTION */
+    h3 {
+      font-size: 12pt;
+      font-weight: 700;
+      color: var(--blue);
+      margin: 1.25rem 0 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    h3 .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--orange);
+      display: inline-block;
+    }
+
+    p { margin-bottom: 0.75rem; }
+
+    /* FORMULA BOX */
+    .formula {
+      background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+      border-left: 4px solid var(--formula-border);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0 1rem 0;
+      font-family: 'Courier New', monospace;
+      font-size: 10.5pt;
+      color: #3730a3;
+      line-height: 1.9;
+      page-break-inside: avoid;
+    }
+    .formula .label {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 8pt;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #6366f1;
+      margin-bottom: 0.3rem;
+      display: block;
+    }
+    .formula .var {
+      color: #7c3aed;
+      font-weight: 700;
+    }
+    .formula .op {
+      color: #be185d;
+      font-weight: 700;
+    }
+    .formula .num {
+      color: #059669;
+      font-weight: 700;
+    }
+
+    /* TRAFFIC LIGHT TABLE */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0 1rem 0;
+      font-size: 9.5pt;
+    }
+    th {
+      background: var(--blue);
+      color: white;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #f8fafc; }
+
+    .chip {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 100px;
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .chip-red { background: #fef2f2; color: var(--red); border: 1px solid #fecaca; }
+    .chip-yellow { background: #fefce8; color: #a16207; border: 1px solid #fde68a; }
+    .chip-green { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+
+    /* CALLOUT */
+    .callout {
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0;
+      font-size: 10pt;
+      page-break-inside: avoid;
+    }
+    .callout-blue {
+      background: #eff6ff;
+      border: 1px solid #93c5fd;
+      color: #1e40af;
+    }
+    .callout-orange {
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      color: #9a3412;
+    }
+    .callout-green {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      color: #166534;
+    }
+    .callout strong { font-weight: 700; }
+
+    /* FLOW DIAGRAM */
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    .flow-box {
+      background: var(--card-bg);
+      border: 2px solid var(--blue);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-size: 9pt;
+      font-weight: 600;
+      color: var(--dark);
+      text-align: center;
+      min-width: 100px;
+    }
+    .flow-arrow {
+      color: var(--orange);
+      font-size: 16pt;
+      font-weight: 800;
+    }
+
+    /* METRIC CARD */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+    .metric-card {
+      background: var(--card-bg);
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      page-break-inside: avoid;
+    }
+    .metric-card .mc-title {
+      font-weight: 700;
+      font-size: 9.5pt;
+      color: var(--dark);
+      margin-bottom: 0.3rem;
+    }
+    .metric-card .mc-formula {
+      font-family: 'Courier New', monospace;
+      font-size: 8.5pt;
+      color: #6366f1;
+      background: #eef2ff;
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+      display: inline-block;
+      margin-bottom: 0.3rem;
+    }
+    .mc-thresholds {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-top: 0.25rem;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem 0 1rem 0;
+      color: var(--muted);
+      font-size: 8pt;
+      border-top: 1px solid #e2e8f0;
+      margin-top: 2rem;
+    }
+
+    ul { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+    li { margin-bottom: 0.3rem; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== COVER PAGE ==================== -->
+  <div class="cover">
+    <div class="badge">Internal Reference Document</div>
+    <h1>FINETHY</h1>
+    <h1 style="font-size: 28pt; font-weight: 400; margin-bottom: 1rem;">Fact-Finder Engine</h1>
+    <div class="subtitle">System Architecture, Calculations & Methodology</div>
+    <div style="width: 80px; height: 3px; background: var(--orange); border-radius: 2px; margin: 0 auto 1.5rem;"></div>
+    <p style="max-width: 500px; font-size: 10.5pt; opacity: 0.8; line-height: 1.6;">
+      A comprehensive guide to the automated financial health analysis engine 
+      powering FINETHY's pre-meeting client intelligence reports for Certified Financial Planners.
+    </p>
+    <div class="version">Version 2.0 &middot; July 2026 &middot; FINETHY LLP, Bengaluru</div>
+  </div>
+
+  <!-- ==================== TABLE OF CONTENTS ==================== -->
+  <div class="toc">
+    <h2>Table of Contents</h2>
+    <div class="toc-item"><span><span class="num">01</span><span class="title">System Overview & Data Flow</span></span></div>
+    <div class="toc-item"><span><span class="num">02</span><span class="title">Financial Health Metrics (Traffic Light System)</span></span></div>
+    <div class="toc-item"><span><span class="num">03</span><span class="title">Risk Profiling Engine</span></span></div>
+    <div class="toc-item"><span><span class="num">04</span><span class="title">Asset & Liability Analysis</span></span></div>
+    <div class="toc-item"><span><span class="num">05</span><span class="title">Goals & Retirement Projections</span></span></div>
+    <div class="toc-item"><span><span class="num">06</span><span class="title">CFP Sheet Calculations</span></span></div>
+    <div class="toc-item"><span><span class="num">07</span><span class="title">Advisor Intelligence Layer</span></span></div>
+    <div class="toc-item"><span><span class="num">08</span><span class="title">PDF Report Structure</span></span></div>
+  </div>
+
+  <!-- ==================== SECTION 1 ==================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">System Overview & Data Flow</div>
+    </div>
+
+    <p>The FINETHY Fact-Finder is an automated pre-meeting intelligence system for Certified Financial Planners. A client fills out a multi-step intake form covering demographics, income, assets, liabilities, goals, insurance, and risk tolerance. The system then runs a comprehensive financial health analysis and generates a PDF report for the advisor — before the first meeting even begins.</p>
+
+    <h3><span class="dot"></span> End-to-End Pipeline</h3>
+    <div class="flow">
+      <div class="flow-box">Client Intake<br><small style="color:var(--muted)">Multi-step form</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box">Database<br><small style="color:var(--muted)">Prisma + SQLite</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box" style="border-color: var(--orange);">Analysis Engine<br><small style="color:var(--orange)">10+ metrics</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box">Risk Profiler<br><small style="color:var(--muted)">Capacity + Tolerance</small></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box" style="border-color: var(--green);">PDF Report<br><small style="color:var(--green)">React-PDF</small></div>
+    </div>
+
+    <h3><span class="dot"></span> Technology Stack</h3>
+    <div class="two-col">
+      <div>
+        <ul>
+          <li><strong>Frontend:</strong> Next.js 14, React, Tailwind CSS</li>
+          <li><strong>Backend:</strong> Next.js API Routes (Server Actions)</li>
+          <li><strong>Database:</strong> SQLite via Prisma ORM</li>
+        </ul>
+      </div>
+      <div>
+        <ul>
+          <li><strong>PDF Engine:</strong> @react-pdf/renderer</li>
+          <li><strong>Charts:</strong> SVG Path-based pie charts</li>
+          <li><strong>Fonts:</strong> Noto Sans (embedded Base64 TTF)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout-blue">
+      <strong>Key Principle:</strong> Every number shown in the report is derived, not stored. The database holds only raw client inputs. All ratios, scores, flags, and recommendations are computed fresh each time the report is generated.
+    </div>
+  </div>
+
+  <!-- ==================== SECTION 2 ==================== -->
+  <div class="page-break"></div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">Financial Health Metrics</div>
+    </div>
+
+    <p>The engine evaluates 10+ financial health metrics, each classified into a <span class="chip chip-red">RED</span> <span class="chip chip-yellow">YELLOW</span> <span class="chip chip-green">GREEN</span> traffic light status. The advisor sees at a glance which areas need urgent attention.</p>
+
+    <h3><span class="dot"></span> 2.1 Emergency Fund Ratio</h3>
+    <p>Measures whether the client has enough liquid assets to cover expenses during an emergency.</p>
+    <div class="formula">
+      <span class="label">Formula</span>
+      <span class="var">Emergency Fund Ratio</span> <span class="op">=</span> <span class="var">Liquid Assets</span> <span class="op">/</span> <span class="var">Monthly Expenses</span>
+    </div>
+    <div class="formula">
+      <span class="label">Liquid Assets Breakdown</span>
+      <span class="var">Liquid Assets</span> <span class="op">=</span> <span class="var">Bank Savings & FD</span> <span class="op">+</span> <span class="var">Cash at Hand</span> <span class="op">+</span> <span class="var">MF Debt Component</span><br>
+      <span class="var">MF Debt</span> <span class="op">=</span> <span class="var">MF Value</span> <span class="op">&times;</span> (<span class="num">1</span> <span class="op">-</span> <span class="var">Equity%</span> <span class="op">/</span> <span class="num">100</span>)
+    </div>
+    <table>
+      <tr><th>Status</th><th>Threshold</th><th>Interpretation</th></tr>
+      <tr><td><span class="chip chip-red">RED</span></td><td>&lt; 3 months</td><td>Critically low — one job loss or medical event could be devastating</td></tr>
+      <tr><td><span class="chip chip-yellow">YELLOW</span></td><td>3 - 6 months</td><td>Marginal — building up but not yet comfortable</td></tr>
+      <tr><td><span class="chip chip-green">GREEN</span></td><td>&ge; 6 months</td><td>Well-cushioned for emergencies</td></tr>
+    </table>
+
+    <h3><span class="dot"></span> 2.2 Savings Rate</h3>
+    <div class="formula">
+      <span class="label">Formula</span>
+      <span class="var">Savings Rate</span> <span class="op">=</span> (<span class="var">Monthly Income</span> <span class="op">-</span> <span class="var">Expenses</span> <span class="op">-</span> <span class="var">EMIs</span>) <span class="op">/</span> <span class="var">Monthly Income</span> <span class="op">&times;</span> <span class="num">100</span>
+    </div>
+    <table>
+      <tr><th>Status</th><th>Threshold</th><th>Interpretation</th></tr>
+      <tr><td><span class="chip chip-red">RED</span></td><td>&lt; 10%</td><td>Unsustainable — not building any wealth</td></tr>
+      <tr><td><span class="chip chip-yellow">YELLOW</span></td><td>10% - 20%</td><td>Below ideal, room for improvement</td></tr>
+      <tr><td><span class="chip chip-green">GREEN</span></td><td>&ge; 20%</td><td>Healthy savings discipline</td></tr>
+    </table>
+
+    <h3><span class="dot"></span> 2.3 EMI-to-Income Ratio</h3>
+    <div class="formula">
+      <span class="label">Formula</span>
+      <span class="var">EMI Ratio</span> <span class="op">=</span> <span class="var">Total Monthly EMIs</span> <span class="op">/</span> <span class="var">Monthly Income</span> <span class="op">&times;</span> <span class="num">100</span>
+    </div>
+    <table>
+      <tr><th>Status</th><th>Threshold</th><th>Interpretation</th></tr>
+      <tr><td><span class="chip chip-red">RED</span></td><td>&gt; 50%</td><td>Severely over-leveraged</td></tr>
+      <tr><td><span class="chip chip-yellow">YELLOW</span></td><td>40% - 50%</td><td>High but manageable with discipline</td></tr>
+      <tr><td><span class="chip chip-green">GREEN</span></td><td>&lt; 40%</td><td>Comfortable debt servicing capacity</td></tr>
+    </table>
+
+    <h3><span class="dot"></span> 2.4 Equity Exposure vs. Age</h3>
+    <p>The classic "100 minus age" rule applied to investible (non-real-estate) assets.</p>
+    <div class="formula">
+      <span class="label">Formula</span>
+      <span class="var">Investible Assets</span> <span class="op">=</span> <span class="var">Liquid</span> <span class="op">+</span> <span class="var">Equity</span> <span class="op">+</span> <span class="var">Retirement Accounts</span> <span class="op">+</span> <span class="var">Gold</span><br>
+      <span class="var">Equity Ratio</span> <span class="op">=</span> <span class="var">Equity Assets</span> <span class="op">/</span> <span class="var">Investible Assets</span> <span class="op">&times;</span> <span class="num">100</span><br>
+      <span class="var">Ideal Equity</span> <span class="op">=</span> max(<span class="num">0</span>, <span class="num">100</span> <span class="op">-</span> <span class="var">Age</span>)
+    </div>
+    <div class="formula">
+      <span class="label">Equity Assets Breakdown</span>
+      <span class="var">Equity Assets</span> <span class="op">=</span> <span class="var">Stocks</span> <span class="op">+</span> <span class="var">Other Assets</span> <span class="op">+</span> <span class="var">MF Equity Component</span><br>
+      <span class="var">MF Equity</span> <span class="op">=</span> <span class="var">MF Value</span> <span class="op">&times;</span> (<span class="var">Equity%</span> <span class="op">/</span> <span class="num">100</span>) &nbsp;&nbsp;<em style="color:#94a3b8">// defaults to 100% if not specified</em>
+    </div>
+    <table>
+      <tr><th>Status</th><th>Threshold</th><th>Interpretation</th></tr>
+      <tr><td><span class="chip chip-red">RED</span></td><td>Deviation &gt; 25pts from ideal</td><td>Way too aggressive or too conservative for age</td></tr>
+      <tr><td><span class="chip chip-yellow">YELLOW</span></td><td>Deviation 15-25pts</td><td>Slight misalignment</td></tr>
+      <tr><td><span class="chip chip-green">GREEN</span></td><td>Deviation &lt; 15pts</td><td>Well-aligned with age-based benchmark</td></tr>
+    </table>
+
+    <h3><span class="dot"></span> 2.5 Additional Metrics</h3>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="mc-title">Life Cover Adequacy</div>
+        <div class="mc-formula">HLV = Income &times; 10 + Liabilities</div>
+        <div class="mc-thresholds">
+          <span class="chip chip-red">&lt;50%</span>
+          <span class="chip chip-yellow">50-80%</span>
+          <span class="chip chip-green">&ge;80%</span>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-title">Health Cover Adequacy</div>
+        <div class="mc-formula">Target = 5L base + 3L/dependent</div>
+        <div class="mc-thresholds">
+          <span class="chip chip-red">&lt;50%</span>
+          <span class="chip chip-yellow">50-80%</span>
+          <span class="chip chip-green">&ge;80%</span>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-title">Real Estate Concentration</div>
+        <div class="mc-formula">RE% = Property / Total Assets &times; 100</div>
+        <div class="mc-thresholds">
+          <span class="chip chip-red">&gt;70%</span>
+          <span class="chip chip-yellow">50-70%</span>
+          <span class="chip chip-green">&lt;50%</span>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-title">Liquidity Ratio</div>
+        <div class="mc-formula">Liquid% = Liquid / Total Assets &times; 100</div>
+        <div class="mc-thresholds">
+          <span class="chip chip-red">&lt;5%</span>
+          <span class="chip chip-yellow">5-10%</span>
+          <span class="chip chip-green">&ge;10%</span>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-title">Credit Card Revolving Debt</div>
+        <div class="mc-formula">Has CC outstanding &gt; 0?</div>
+        <div class="mc-thresholds">
+          <span class="chip chip-red">Any balance</span>
+          <span class="chip chip-green">Zero balance</span>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-title">Retirement Readiness</div>
+        <div class="mc-formula">Projected Corpus / Target Corpus &times; 100</div>
+        <div class="mc-thresholds">
+          <span class="chip chip-red">&lt;50%</span>
+          <span class="chip chip-yellow">50-80%</span>
+          <span class="chip chip-green">&ge;80%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SECTION 3 ==================== -->
+  <div class="page-break"></div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">Risk Profiling Engine</div>
+    </div>
+
+    <p>The risk profile combines two independent scores into a final composite that guides asset allocation recommendations.</p>
+
+    <div class="two-col">
+      <div>
+        <h3><span class="dot"></span> 3.1 Tolerance Score (Willingness)</h3>
+        <p>Derived from 14 psychometric questions (Q1-Q14), each scored 1-5. Measures the client's <em>emotional</em> comfort with volatility.</p>
+        <div class="formula">
+          <span class="label">Formula</span>
+          <span class="var">Raw Score</span> <span class="op">=</span> <span class="op">&Sigma;</span> Q1..Q14<br>
+          <span class="var">Tolerance</span> <span class="op">=</span> ((<span class="var">Raw</span> <span class="op">-</span> <span class="num">14</span>) <span class="op">/</span> <span class="num">56</span>) <span class="op">&times;</span> <span class="num">100</span>
+        </div>
+        <p><small style="color:var(--muted)">Min raw = 14 (all 1s), Max raw = 70 (all 5s). Normalised to 0-100.</small></p>
+      </div>
+      <div>
+        <h3><span class="dot"></span> 3.2 Capacity Score (Ability)</h3>
+        <p>Derived from <em>financial facts</em> — not opinions. Measures whether the client can actually <em>afford</em> to take risk.</p>
+        <div class="formula">
+          <span class="label">Method</span>
+          Multiple constraints evaluated.<br>
+          Each assigns a sub-score (0-100).<br>
+          <span class="var">Capacity</span> <span class="op">=</span> min(<span class="var">all sub-scores</span>)
+        </div>
+        <p><small style="color:var(--muted)">The weakest link determines capacity — one severe constraint caps the whole score.</small></p>
+      </div>
+    </div>
+
+    <h3><span class="dot"></span> Capacity Constraint Factors</h3>
+    <table>
+      <tr><th>Factor</th><th>Condition</th><th>Sub-Score</th><th>Constraint Label</th></tr>
+      <tr><td>Emergency Fund</td><td>&lt; 3 months expenses</td><td>25</td><td>"No emergency cushion"</td></tr>
+      <tr><td>Emergency Fund</td><td>3-6 months</td><td>55</td><td>"Thin emergency cushion"</td></tr>
+      <tr><td>Emergency Fund</td><td>&ge; 6 months</td><td>85</td><td>"Solid emergency fund"</td></tr>
+      <tr><td>Savings Rate</td><td>&lt; 10%</td><td>30</td><td>"Very low savings rate"</td></tr>
+      <tr><td>Savings Rate</td><td>10-20%</td><td>55</td><td>"Below-average savings rate"</td></tr>
+      <tr><td>Savings Rate</td><td>&ge; 20%</td><td>85</td><td>"Healthy savings rate"</td></tr>
+      <tr><td>Age</td><td>&ge; 55</td><td>35</td><td>"Less than 10 years to retirement"</td></tr>
+      <tr><td>Age</td><td>45-54</td><td>55</td><td>"Approaching retirement"</td></tr>
+      <tr><td>Age</td><td>&lt; 45</td><td>85</td><td>"Long investment horizon"</td></tr>
+      <tr><td>EMI Ratio</td><td>&gt; 50%</td><td>20</td><td>"Very high EMI burden"</td></tr>
+      <tr><td>Dependents</td><td>&gt; 3</td><td>40</td><td>"High number of dependents"</td></tr>
+    </table>
+
+    <h3><span class="dot"></span> 3.3 Final Score & Profile</h3>
+    <div class="formula">
+      <span class="label">Final Score</span>
+      <span class="var">Final Risk Score</span> <span class="op">=</span> min(<span class="var">Capacity</span>, <span class="var">Tolerance</span>)
+    </div>
+
+    <div class="callout callout-orange">
+      <strong>Why min()?</strong> A client who is emotionally willing to take high risk but financially cannot afford it should NOT be put into aggressive products. Similarly, a wealthy client who is terrified of volatility should not be pushed. The lower of the two scores governs the recommendation.
+    </div>
+
+    <table>
+      <tr><th>Score Range</th><th>Profile Label</th><th>Suggested Equity Allocation</th></tr>
+      <tr><td>0 - 19</td><td><strong>Conservative</strong></td><td>0 - 20%</td></tr>
+      <tr><td>20 - 39</td><td><strong>Moderately Conservative</strong></td><td>20 - 40%</td></tr>
+      <tr><td>40 - 59</td><td><strong>Balanced</strong></td><td>40 - 60%</td></tr>
+      <tr><td>60 - 79</td><td><strong>Moderately Aggressive</strong></td><td>60 - 80%</td></tr>
+      <tr><td>80 - 100</td><td><strong>Aggressive</strong></td><td>80 - 100%</td></tr>
+    </table>
+
+    <h3><span class="dot"></span> 3.4 Consistency Check</h3>
+    <p>The engine detects contradictions in the psychometric answers:</p>
+    <ul>
+      <li><strong>Panic vs Greed:</strong> If Q1 ("sell everything") scores &le; 2 but Q2 ("+40%/-35%") scores &ge; 4 — the client claims comfort with high volatility but would panic at the first dip.</li>
+      <li><strong>Knowledge vs Behavior:</strong> If Q12 (market knowledge) scores &ge; 4 but Q14 (portfolio drawdown reaction) scores &le; 2 — claimed expertise doesn't match emotional reactions.</li>
+    </ul>
+
+    <h3><span class="dot"></span> 3.5 Gap Insight</h3>
+    <div class="formula">
+      <span class="label">Logic</span>
+      <span class="op">IF</span> <span class="var">Tolerance</span> <span class="op">-</span> <span class="var">Capacity</span> <span class="op">&gt;</span> <span class="num">15</span>: "Willing but unable"<br>
+      <span class="op">IF</span> <span class="var">Capacity</span> <span class="op">-</span> <span class="var">Tolerance</span> <span class="op">&gt;</span> <span class="num">15</span>: "Able but unwilling"<br>
+      <span class="op">ELSE</span>: "Aligned"
+    </div>
+  </div>
+
+  <!-- ==================== SECTION 4 ==================== -->
+  <div class="page-break"></div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">Asset & Liability Analysis</div>
+    </div>
+
+    <h3><span class="dot"></span> 4.1 Asset Classification</h3>
+    <table>
+      <tr><th>Category</th><th>Includes</th><th>Role in Analysis</th></tr>
+      <tr><td style="color:var(--blue); font-weight:600;">Liquid Assets</td><td>Bank Savings, FDs, Cash, MF Debt Component</td><td>Emergency fund numerator</td></tr>
+      <tr><td style="color:var(--green); font-weight:600;">Equity Assets</td><td>Stocks, Other Assets, MF Equity Component</td><td>Equity exposure numerator</td></tr>
+      <tr><td style="color:var(--orange); font-weight:600;">Real Estate</td><td>Property Value</td><td>Concentration risk check</td></tr>
+      <tr><td style="color:#eab308; font-weight:600;">Gold</td><td>Gold Holdings</td><td>Part of investible assets</td></tr>
+      <tr><td style="color:#8b5cf6; font-weight:600;">Retirement Accounts</td><td>EPF, PPF, NPS</td><td>Part of investible assets</td></tr>
+    </table>
+
+    <div class="formula">
+      <span class="label">Key Aggregations</span>
+      <span class="var">Total Assets</span> <span class="op">=</span> Liquid + Equity + RE + Gold + Retirement<br>
+      <span class="var">Net Worth</span> <span class="op">=</span> <span class="var">Total Assets</span> <span class="op">-</span> <span class="var">Total Liabilities</span><br>
+      <span class="var">Investible Assets</span> <span class="op">=</span> Liquid + Equity + Retirement + Gold &nbsp;&nbsp;<em style="color:#94a3b8">// excludes real estate</em>
+    </div>
+
+    <h3><span class="dot"></span> 4.2 Pie Charts</h3>
+    <p>Two side-by-side SVG pie charts are rendered in the PDF: one for asset composition and one for liability composition. Each is drawn using calculated SVG arc paths (<code>&lt;Path&gt;</code> elements), not images. Slices below 2% are merged into an "Other" category.</p>
+
+    <h3><span class="dot"></span> 4.3 Liability Categories</h3>
+    <table>
+      <tr><th>Category</th><th>Assumed Interest Rate</th><th>Priority</th></tr>
+      <tr><td style="color:var(--red); font-weight:600;">Credit Card Debt</td><td>36% p.a.</td><td>Highest — clear immediately</td></tr>
+      <tr><td>Personal Loan</td><td>16% p.a.</td><td>High</td></tr>
+      <tr><td>Education Loan</td><td>10% p.a.</td><td>Medium (tax benefit)</td></tr>
+      <tr><td>Car Loan</td><td>9% p.a.</td><td>Medium</td></tr>
+      <tr><td style="color:var(--green);">Home Loan</td><td>8.5% p.a.</td><td>Lowest (asset-backed, tax benefit)</td></tr>
+    </table>
+  </div>
+
+  <!-- ==================== SECTION 5 ==================== -->
+  <div class="page-break"></div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title">Goals & Retirement Projections</div>
+    </div>
+
+    <h3><span class="dot"></span> 5.1 Education / General Goals</h3>
+    <p>Each non-retirement goal is inflated to its future value, then a monthly SIP is back-calculated.</p>
+    <div class="formula">
+      <span class="label">Future Value of Goal</span>
+      <span class="var">FV</span> <span class="op">=</span> <span class="var">Target Amount</span> <span class="op">&times;</span> (<span class="num">1</span> <span class="op">+</span> <span class="var">inflation</span>)<sup><span class="var">years</span></sup>
+    </div>
+    <div class="formula">
+      <span class="label">Monthly SIP Required (at 10% p.a.)</span>
+      <span class="var">r</span> <span class="op">=</span> <span class="num">0.10</span> <span class="op">/</span> <span class="num">12</span> &nbsp;&nbsp;<em style="color:#94a3b8">// monthly rate</em><br>
+      <span class="var">n</span> <span class="op">=</span> <span class="var">years</span> <span class="op">&times;</span> <span class="num">12</span> &nbsp;&nbsp;<em style="color:#94a3b8">// total months</em><br>
+      <span class="var">SIP</span> <span class="op">=</span> <span class="var">FV</span> <span class="op">&times;</span> <span class="var">r</span> <span class="op">/</span> ((<span class="num">1</span><span class="op">+</span><span class="var">r</span>)<sup><span class="var">n</span></sup> <span class="op">-</span> <span class="num">1</span>) <span class="op">&times;</span> (<span class="num">1</span><span class="op">+</span><span class="var">r</span>))
+    </div>
+
+    <h3><span class="dot"></span> 5.2 Retirement Goal</h3>
+    <p>Retirement uses a two-step process: first compute the required corpus, then find the SIP needed to build it.</p>
+    <div class="formula">
+      <span class="label">Step 1: Retirement Corpus (Present Value of Annuity)</span>
+      <span class="var">Annual Expense at Retirement</span> <span class="op">=</span> <span class="var">Current Income</span> <span class="op">&times;</span> <span class="num">0.8</span> <span class="op">&times;</span> (<span class="num">1</span><span class="op">+</span><span class="num">0.06</span>)<sup><span class="var">years to retire</span></sup><br><br>
+      <span class="var">Required Corpus</span> <span class="op">=</span> <span class="var">Annual Expense</span> <span class="op">&times;</span> (<span class="num">1</span> <span class="op">-</span> (<span class="num">1</span><span class="op">+</span><span class="num">0.05</span>)<sup><span class="op">-</span><span class="num">20</span></sup>) <span class="op">/</span> <span class="num">0.05</span>
+    </div>
+    <div class="callout callout-blue">
+      <strong>Assumptions:</strong> 80% income replacement ratio, 6% general inflation, 5% real post-retirement return, 20-year drawdown period.
+    </div>
+    <div class="formula">
+      <span class="label">Step 2: Monthly SIP to Build Corpus</span>
+      Same SIP formula as above, with <span class="var">FV</span> = <span class="var">Required Corpus</span> and <span class="var">return</span> = <span class="num">10%</span> p.a.
+    </div>
+
+    <h3><span class="dot"></span> 5.3 Goal Feasibility Check</h3>
+    <p>The CFP sheet sums all goal SIPs and compares against the monthly surplus:</p>
+    <div class="formula">
+      <span class="label">Tension Detection</span>
+      <span class="op">IF</span> <span class="var">Total SIP</span> <span class="op">&gt;</span> <span class="var">Monthly Surplus</span>:<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--red); font-weight:700;">"Retirement SIP cannot run simultaneously with Education SIPs at current surplus - prioritisation needed."</span>
+    </div>
+  </div>
+
+  <!-- ==================== SECTION 6 ==================== -->
+  <div class="page-break"></div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div class="section-title">CFP Sheet Calculations</div>
+    </div>
+
+    <p>The CFP (Certified Financial Planner) Reference Sheet is an internal-only page in the report. It contains pre-computed numbers so the advisor walks into the meeting fully prepared.</p>
+
+    <h3><span class="dot"></span> 6.1 Cash Flow Statement</h3>
+    <div class="formula">
+      <span class="label">Monthly Cash Flow</span>
+      <span class="var">Monthly Income</span> <span class="op">=</span> <span class="var">Gross Annual Income</span> <span class="op">/</span> <span class="num">12</span><br>
+      <span class="var">Surplus</span> <span class="op">=</span> <span class="var">Income</span> <span class="op">-</span> <span class="var">Living Expenses</span> <span class="op">-</span> <span class="var">EMIs</span>
+    </div>
+
+    <h3><span class="dot"></span> 6.2 Emergency Fund Gap</h3>
+    <div class="formula">
+      <span class="label">Formula</span>
+      <span class="var">EF Target</span> <span class="op">=</span> <span class="var">Monthly Expenses</span> <span class="op">&times;</span> <span class="num">6</span><br>
+      <span class="var">Gap</span> <span class="op">=</span> <span class="var">EF Target</span> <span class="op">-</span> <span class="var">Liquid Assets</span>
+    </div>
+
+    <h3><span class="dot"></span> 6.3 Life Insurance Adequacy (HLV Method)</h3>
+    <div class="formula">
+      <span class="label">Human Life Value</span>
+      <span class="var">HLV Target</span> <span class="op">=</span> (<span class="var">Gross Annual Income</span> <span class="op">&times;</span> <span class="num">10</span>) <span class="op">+</span> <span class="var">Outstanding Liabilities</span><br>
+      <span class="var">Life Gap</span> <span class="op">=</span> <span class="var">HLV Target</span> <span class="op">-</span> <span class="var">Existing Term Cover</span>
+    </div>
+
+    <h3><span class="dot"></span> 6.4 Health Insurance</h3>
+    <div class="formula">
+      <span class="label">Benchmark Calculation</span>
+      <span class="var">Health Target</span> <span class="op">=</span> Rs. <span class="num">5,00,000</span> <span class="op">+</span> Rs. <span class="num">3,00,000</span> <span class="op">&times;</span> max(<span class="num">0</span>, <span class="var">Family Size</span> <span class="op">-</span> <span class="num">1</span>)
+    </div>
+
+    <h3><span class="dot"></span> 6.5 Debt Clearance Priority (Avalanche Method)</h3>
+    <p>All liabilities are sorted by interest rate (highest first). The advisor is told to target the highest-rate debt first — this is mathematically optimal and saves the most interest.</p>
+
+    <h3><span class="dot"></span> 6.6 Standard Assumptions</h3>
+    <table>
+      <tr><th>Parameter</th><th>Value</th><th>Rationale</th></tr>
+      <tr><td>General Inflation</td><td>6% p.a.</td><td>Long-term India CPI average</td></tr>
+      <tr><td>Education Inflation</td><td>10% p.a.</td><td>Education costs rise faster than CPI</td></tr>
+      <tr><td>Pre-Retirement Equity Return</td><td>10% p.a.</td><td>Long-term Nifty 50 CAGR</td></tr>
+      <tr><td>Post-Retirement Real Return</td><td>5% p.a.</td><td>Conservative balanced portfolio</td></tr>
+      <tr><td>Emergency Fund</td><td>6 months</td><td>Standard CFP recommendation</td></tr>
+      <tr><td>Life Cover Multiplier</td><td>10x Income</td><td>Standard HLV method</td></tr>
+      <tr><td>Retirement Drawdown</td><td>20 years</td><td>Life expectancy buffer</td></tr>
+    </table>
+  </div>
+
+  <!-- ==================== SECTION 7 ==================== -->
+  <div class="page-break"></div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <div class="section-title">Advisor Intelligence Layer</div>
+    </div>
+
+    <h3><span class="dot"></span> 7.1 Advisor Brief</h3>
+    <p>An auto-generated paragraph summarising the client profile in plain English: age, occupation, family situation, top goal, income level, key strengths, and the most critical red flags. Written in the second person ("Your client is...") so the advisor can scan it in 30 seconds before the meeting.</p>
+
+    <h3><span class="dot"></span> 7.2 Dynamic Questions to Raise</h3>
+    <p>The system generates 5-8 specific probing questions for the advisor, based on which flags are RED or YELLOW:</p>
+    <table>
+      <tr><th>Trigger Flag</th><th>Generated Question</th></tr>
+      <tr><td><span class="chip chip-red">Life Cover</span></td><td>"What is your current term cover? Any group life cover from employer?"</td></tr>
+      <tr><td><span class="chip chip-yellow">Liquidity</span></td><td>"Are your liquid assets accessible within 48 hours, or are most FDs locked?"</td></tr>
+      <tr><td><span class="chip chip-yellow">Health Cover</span></td><td>"Is the employer cover portable if you change jobs? Considered a super top-up?"</td></tr>
+      <tr><td><span class="chip chip-red">Credit Card</span></td><td>"Is the revolving balance on one card or multiple? What is the interest rate?"</td></tr>
+      <tr><td><span class="chip chip-red">RE Concentration</span></td><td>"Is the property self-occupied or an investment? Any intention to liquidate?"</td></tr>
+      <tr><td>Goals Tension</td><td>"How would you prioritise between education and retirement if you had to choose?"</td></tr>
+      <tr><td>Q15 mentions ULIP</td><td>"Given your ULIP experience, are you open to term insurance specifically?"</td></tr>
+    </table>
+
+    <h3><span class="dot"></span> 7.3 Observations (Areas Needing Attention)</h3>
+    <p>Each RED or YELLOW metric generates a plain-English observation sentence. These are displayed with colour-coded alert bars in the report so the advisor's eye is immediately drawn to the most critical issues.</p>
+  </div>
+
+  <!-- ==================== SECTION 8 ==================== -->
+  <div class="page-break"></div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <div class="section-title">PDF Report Structure</div>
+    </div>
+
+    <p>The final output is a multi-page A4 PDF generated using <code>@react-pdf/renderer</code> with embedded Noto Sans fonts.</p>
+
+    <h3><span class="dot"></span> Page Layout</h3>
+    <table>
+      <tr><th>Page</th><th>Section</th><th>Contents</th></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">1</td><td>Header & Snapshot</td><td>Client name, RED/YELLOW/GREEN counts, Net Worth, Monthly Surplus, Top Goal, Savings Rate</td></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">1</td><td>Client Details</td><td>Demographics, family, dependents</td></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">1</td><td>How to Approach</td><td>Auto-generated advisor brief paragraph</td></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">1-2</td><td>Questions to Raise</td><td>Dynamic meeting questions</td></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">2</td><td>Risk Profile</td><td>Spectrum bar (capacity + tolerance), gap insight, Q15 verbatim, consistency warning</td></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">2</td><td>Health Dashboard</td><td>All metrics with traffic lights</td></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">2</td><td>Areas Needing Attention</td><td>RED/YELLOW observation cards</td></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">3</td><td>Assets & Liabilities</td><td>Two SVG pie charts + summary table</td></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">3</td><td>Goals</td><td>Goal table with target years and amounts</td></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">4-5</td><td>CFP Reference Sheet</td><td>All pre-computed calculations for the planner</td></tr>
+      <tr><td style="text-align:center; font-weight:700; color:var(--blue);">6</td><td>Meeting Notes</td><td>25 ruled lines for handwritten notes during the meeting</td></tr>
+    </table>
+
+    <h3><span class="dot"></span> Design Principles</h3>
+    <ul>
+      <li><strong>Zero mojibake:</strong> All special characters (bullets, dashes, rupee signs) are sanitised through <code>cleanPdfText()</code> before rendering</li>
+      <li><strong>Embedded fonts:</strong> Noto Sans Regular + Bold are Base64-encoded into the build to avoid runtime font fetching</li>
+      <li><strong>Page numbers:</strong> "Page X of Y" on every page via <code>render={({pageNumber, totalPages})}</code></li>
+      <li><strong>No raw scores:</strong> The Q1-Q14 score table is deliberately excluded — raw scores without question text are meaningless to advisors</li>
+    </ul>
+
+    <div class="callout callout-green">
+      <strong>The Goal:</strong> An advisor should be able to pick up this report 5 minutes before a meeting and walk in feeling like they've known the client for months. Every number is actionable, every flag points to a conversation, and every calculation is pre-done so the advisor can focus on <em>advising</em>.
+    </div>
+  </div>
+
+  <!-- ==================== FOOTER ==================== -->
+  <div class="footer">
+    FINETHY LLP &middot; AMFI-registered Mutual Fund Distributor &middot; ARN-28883 &middot; EUIN E045709<br>
+    #56, 4th Floor, Sumukha Plaza, Puttanna Rd, Basavanagudi, Bengaluru 560004 &middot; +91-89040 56464
+  </div>
+
+</body>
+</html>

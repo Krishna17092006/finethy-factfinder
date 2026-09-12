@@ -1,0 +1,169 @@
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 220 56% 42%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 32 92% 49%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 195 100% 47%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 220 56% 42%;
+    --radius: 0.625rem;
+
+    /* FINETHY BRAND - Light Mode */
+    --brand-blue: #2f5aa8;
+    --brand-orange: #f08a0c;
+    --brand-cyan: #00bbee;
+    --brand-darkText: #1f2531;
+    --brand-bodyText: #797e89;
+    --brand-muted: #aeb3bd;
+    --brand-border: #e0e0e0;
+    --brand-white: #ffffff; /* For explicit white elements */
+    --brand-card: #ffffff;
+    --brand-elevated: #ffffff;
+    --brand-page: #f8f9fa;
+    --brand-footerBg: #2d3340;
+
+    /* HEALTH COLORS */
+    --health-red: #ef4444;
+    --health-red-bg: #fef2f2;
+    --health-red-border: transparent;
+    --health-yellow: #eab308;
+    --health-yellow-bg: #fefce8;
+    --health-yellow-border: transparent;
+    --health-green: #22c55e;
+    --health-green-bg: #f0fdf4;
+    --health-green-border: transparent;
+  }
+}
+
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    background-color: var(--brand-page);
+    color: var(--brand-bodyText);
+    @apply font-sans antialiased transition-colors duration-150;
+  }
+}
+
+/* Indian number formatting helper */
+.rupee-input::before {
+  content: '₹';
+  @apply text-brand-muted mr-1;
+}
+
+/* Health status pill styles */
+.health-green {
+  @apply bg-health-green-bg text-health-green;
+  border-left: 4px solid var(--health-green-border);
+}
+.health-yellow {
+  @apply bg-health-yellow-bg text-health-yellow;
+  border-left: 4px solid var(--health-yellow-border);
+}
+.health-red {
+  @apply bg-health-red-bg text-health-red;
+  border-left: 4px solid var(--health-red-border);
+}
+
+/* Row highlight for blood-report style */
+.row-green {
+  background-color: var(--health-green-bg);
+  border-left: 4px solid var(--health-green-border);
+}
+.row-yellow {
+  background-color: var(--health-yellow-bg);
+  border-left: 4px solid var(--health-yellow-border);
+}
+.row-red {
+  background-color: var(--health-red-bg);
+  border-left: 4px solid var(--health-red-border);
+}
+
+/* Progress bar animation */
+@keyframes progress-fill {
+  from { width: 0%; }
+  to { width: var(--progress-width); }
+}
+
+.progress-animated {
+  animation: progress-fill 0.5s ease-out forwards;
+}
+
+/* Smooth section transitions for the intake form */
+.section-enter {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.section-exit {
+  animation: slideOutLeft 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+}
+
+/* Mobile-optimized touch targets */
+@media (max-width: 640px) {
+  button, [role="button"], input[type="checkbox"], input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Chip styles for quick-select */
+.chip {
+  @apply inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
+    border border-brand-border cursor-pointer transition-all duration-200
+    hover:border-brand-blue hover:bg-slate-100;
+}
+
+.chip-selected {
+  @apply bg-brand-blue text-white border-brand-blue
+    hover:opacity-90;
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-md hover:border-[#2f5aa8]/30;
+}

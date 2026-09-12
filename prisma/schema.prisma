@@ -1,0 +1,225 @@
+// FINETHY Fact-Finder — Prisma Schema
+// SQLite database for client intake submissions
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Intake link — one per client, contains the access token
+model IntakeLink {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  clientName  String?  // optional pre-fill
+  clientPhone String?  // optional pre-fill
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime?
+  submission  Submission?
+}
+
+// Client submission — the main record
+model Submission {
+  id        String   @id @default(cuid())
+  linkId    String   @unique
+  link      IntakeLink @relation(fields: [linkId], references: [id])
+  
+  // Status tracking
+  status      String   @default("draft") // draft | submitted | reviewed | met
+  currentStep Int      @default(0)       // tracks which section the client is on
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  activeTimeSeconds Int? @default(0)
+
+  // ========================================
+  // SECTION A: Personal & Family
+  // ========================================
+  fullName       String?
+  dateOfBirth    String?  // ISO date string
+  mobile         String?
+  email          String?
+  city           String?
+  maritalStatus  String?  // Single | Married | Widowed | Divorced
+  
+  // Spouse (only if married)
+  spouseName       String?
+  spouseDob        String?
+  spouseOccupation String?
+  spouseEarning    Boolean?
+  spouseIncome     Float?   // annual, in rupees
+  
+  // Children — stored as JSON array
+  // [{name, age, stage: "Not in school" | "School" | "College" | "Working"}]
+  childrenCount    Int?     @default(0)
+  childrenDetails  String?  // JSON
+  
+  // Dependents
+  dependentTypes     String?  // JSON array: ["Parents", "In-laws", "Siblings"]
+  totalDependents    Int?
+  
+  // Occupation
+  occupationType     String?  // Salaried-Private | Salaried-Government | Business | Professional | Retired | Homemaker | Other
+  occupationOther    String?
+  employerName       String?
+  yearsInCurrent     String?  // <2 | 2-5 | 5-10 | 10+
+
+  // ========================================
+  // SECTION B: Income & Expenses
+  // ========================================
+  grossAnnualIncome  Float?
+  otherIncomeSources String?  // JSON array: [{type, amount}]
+  monthlyExpenses    Float?
+  totalMonthlyEMIs   Float?
+  monthlySavings     Float?
+
+  // ========================================
+  // SECTION C: Assets
+  // ========================================
+  hasBankSavingsFD       Boolean?
+  bankSavingsFDValue     Float?
+  
+  hasMutualFunds         Boolean?
+  mutualFundsValue       Float?
+  mfEquityPercent        Int?     // 0-100 slider
+  
+  hasStocks              Boolean?
+  stocksValue            Float?
+  
+  hasRetirementAccounts  Boolean?
+  retirementAccountsValue Float?
+  epfValue               Float?
+  ppfValue               Float?
+  npsValue               Float?
+  
+  hasInvestmentProperty  Boolean?
+  investmentPropertyValue Float?
+  investmentPropertyRent  Boolean?
+  
+  ownHouseStatus         String?  // Own-fully-paid | Own-on-loan | Renting | Family-home
+  ownHouseValue          Float?
+  
+  hasGold                Boolean?
+  goldValue              Float?
+  
+  hasOtherAssets         Boolean?
+  otherAssetsValue       Float?
+  otherAssetsDescription String?
+  
+  hasCashAtHand          Boolean?
+  cashAtHandValue        Float?
+
+  // ========================================
+  // SECTION D: Liabilities
+  // ========================================
+  hasHomeLoan            Boolean?
+  homeLoanOutstanding    Float?
+  homeLoanEMI            Float?
+  homeLoanYearsLeft      String?  // <2 | 2-5 | 5-10 | 10-20 | 20+
+  
+  hasCarLoan             Boolean?
+  carLoanOutstanding     Float?
+  carLoanEMI             Float?
+  carLoanYearsLeft       String?
+  
+  hasPersonalLoan        Boolean?
+  personalLoanOutstanding Float?
+  personalLoanEMI        Float?
+  personalLoanYearsLeft  String?
+  
+  hasCreditCardDebt      Boolean?
+  creditCardOutstanding  Float?
+  
+  hasOtherLoans          Boolean?
+  otherLoansOutstanding  Float?
+  otherLoansEMI          Float?
+  otherLoansYearsLeft    String?
+  otherLoansDescription  String?
+
+  // ========================================
+  // SECTION E: Insurance & Protection
+  // ========================================
+  hasTermInsurance       Boolean?
+  termInsuranceCover     Float?
+  
+  hasTraditionalInsurance Boolean?
+  traditionalInsuranceCover   Float?
+  traditionalInsurancePremium Float?  // annual
+  
+  healthInsuranceType    String?  // Only-employer | Personal | Both | None
+  healthInsuranceCover   Float?
+  
+  hasAccidentCover       Boolean?
+  hasCriticalIllness     Boolean?
+  hasHomeInsurance       Boolean?
+  
+  emergencyFundMonths    String?  // <1 | 1-3 | 3-6 | 6+ | Not sure
+
+  // ========================================
+  // SECTION F: Goals & Priorities
+  // ========================================
+  selectedGoals          String?  // JSON array of goal types
+  // [{type, targetYear, targetAmount}]
+  goalDetails            String?  // JSON array with details per goal
+  goalPriorityOrder      String?  // JSON array of goal types in ranked order
+  retirementAge          Int?
+
+  // ========================================
+  // SECTION G: Risk Tolerance
+  // ========================================
+  investmentExperience   String?  // JSON array of types invested in
+  riskQ1                 Int?
+  riskQ2                 Int?
+  riskQ3                 Int?
+  riskQ4                 Int?
+  riskQ5                 Int?
+  riskQ6                 Int?
+  riskQ7                 Int?
+  riskQ8                 Int?
+  riskQ9                 Int?
+  riskQ10                Int?
+  riskQ11                Int?
+  riskQ12                Int?
+  riskQ13                Int?
+  riskQ14                Int?
+  riskQ15                String?  // optional free text for past experience
+
+  // ========================================
+  // SECTION H: Wrap-up
+  // ========================================
+  meetingTopics          String?  // optional free text
+  consentGiven           Boolean  @default(false)
+
+  // ========================================
+  // Advisor-side fields
+  // ========================================
+  advisorNotes  AdvisorNote[]
+  analysisJson  String?  // cached JSON output of the analysis engine
+}
+
+// Advisor notes on a submission
+model AdvisorNote {
+  id           String     @id @default(cuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id])
+  content      String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+// Health range thresholds — advisor-configurable
+model HealthThreshold {
+  id         String @id @default(cuid())
+  metricKey  String @unique  // e.g. "emergencyFundRatio", "savingsRate"
+  greenMin   Float?
+  greenMax   Float?
+  yellowMin  Float?
+  yellowMax  Float?
+  redMin     Float?
+  redMax     Float?
+  updatedAt  DateTime @updatedAt
+}
