@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Svg, Path, G } from '@react-pdf/renderer';
-import { cleanPdfText, formatRupeesShort } from '@/lib/utils';
+import { View, Text, StyleSheet, Svg, Path } from '@react-pdf/renderer';
+import { cleanPdfText } from '@/lib/utils';
 
 const styles = StyleSheet.create({
   chartContainer: {
@@ -64,7 +64,7 @@ export const PieChart = ({ title, data, colors, defaultColor }: PieChartProps) =
   }
 
   // Merge slices < 2% into "Other"
-  let processedData: { category: string; value: number; color: string }[] = [];
+  const processedData: { category: string; value: number; color: string }[] = [];
   let otherValue = 0;
 
   data.forEach(item => {
@@ -72,7 +72,7 @@ export const PieChart = ({ title, data, colors, defaultColor }: PieChartProps) =
     if (percentage < 2) {
       otherValue += item.value;
     } else {
-      let catName = item.category;
+      const catName = item.category;
       let matchedColor = defaultColor;
       // Match color keys (which might be substrings)
       for (const [key, color] of Object.entries(colors)) {

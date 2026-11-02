@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image, Link, Font, Svg, Line } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
 import { AnalysisResult } from '@/lib/types';
 import { CFPSheet } from './CFPSheet';
 import { PieChart } from './PieChart';
@@ -386,7 +386,7 @@ export const FactFinderPDF = ({ submission, analysis, date }: FactFinderPDFProps
     timeTaken = Math.round(ms / 60000) + ' min';
   }
 
-  let goalsList = submission.goalsList || [];
+  const goalsList = submission.goalsList || [];
 
   return (
     <Document>
@@ -437,7 +437,7 @@ export const FactFinderPDF = ({ submission, analysis, date }: FactFinderPDFProps
 
         {/* CLIENT DETAILS */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>CLIENT DETAILS</Text>
+          <Text style={styles.sectionTitle} minPresenceAhead={90}>CLIENT DETAILS</Text>
           <View style={styles.row}>
             <View style={styles.col3}>
               <Text style={styles.label}>Name</Text>
@@ -470,7 +470,7 @@ export const FactFinderPDF = ({ submission, analysis, date }: FactFinderPDFProps
 
         {/* FAMILY BOX */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>FAMILY &amp; DEPENDENTS</Text>
+          <Text style={styles.sectionTitle} minPresenceAhead={90}>FAMILY &amp; DEPENDENTS</Text>
           {isSingle ? (
             <Text style={styles.value}>Single, no dependents.</Text>
           ) : (
@@ -501,14 +501,14 @@ export const FactFinderPDF = ({ submission, analysis, date }: FactFinderPDFProps
 
         {/* HOW TO APPROACH */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>HOW TO APPROACH THIS CLIENT</Text>
+          <Text style={styles.sectionTitle} minPresenceAhead={90}>HOW TO APPROACH THIS CLIENT</Text>
           <Text style={styles.briefText}>{cleanPdfText(analysis.advisorBrief)}</Text>
         </View>
 
         {/* QUESTIONS TO RAISE */}
         {analysis.questionsToRaise && analysis.questionsToRaise.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>QUESTIONS TO RAISE IN MEETING</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={90}>QUESTIONS TO RAISE IN MEETING</Text>
             {analysis.questionsToRaise.map((q, i) => (
               <View key={i} style={styles.questionBox}>
                 <Text style={styles.questionText}>- {cleanPdfText(q)}</Text>
@@ -520,7 +520,7 @@ export const FactFinderPDF = ({ submission, analysis, date }: FactFinderPDFProps
         {/* RISK APPETITE */}
         {analysis.riskProfile && (
           <View style={styles.section} wrap>
-            <Text style={styles.sectionTitle}>RISK APPETITE &amp; TOLERANCE</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={90}>RISK APPETITE &amp; TOLERANCE</Text>
 
             <View style={styles.riskSpectrumContainer}>
               <Text style={styles.riskSpectrumTitle}>Risk Profile: {analysis.riskProfile.finalScore} - {
@@ -588,8 +588,8 @@ export const FactFinderPDF = ({ submission, analysis, date }: FactFinderPDFProps
         )}
 
         {/* HEALTH METRICS */}
-        <View style={styles.section} break>
-          <Text style={styles.sectionTitle}>HEALTH METRICS (THE BLOOD REPORT)</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle} minPresenceAhead={90}>HEALTH METRICS (THE BLOOD REPORT)</Text>
           <View style={styles.healthTable}>
             <View style={styles.tableHeader}>
               <Text style={styles.tableColMetric}>Metric</Text>
@@ -623,7 +623,7 @@ export const FactFinderPDF = ({ submission, analysis, date }: FactFinderPDFProps
         {/* OBSERVATIONS / DISCREPANCIES */}
         {analysis.observations.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>AREAS NEEDING ATTENTION</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={90}>AREAS NEEDING ATTENTION</Text>
             {analysis.observations.map((obs, i) => (
               <View key={i} style={styles.alertBox}>
                   <Text style={styles.alertText}>- {cleanPdfText(obs)}</Text>
@@ -633,10 +633,11 @@ export const FactFinderPDF = ({ submission, analysis, date }: FactFinderPDFProps
         )}
 
         {/* ASSETS & LIABILITIES */}
-        <View style={styles.section} break>
+        <View style={styles.section} wrap={false}>
+          {/* The pie charts cannot split, so keep the heading with them */}
           <Text style={styles.sectionTitle}>{cleanPdfText("ASSETS & LIABILITIES")}</Text>
 
-          <View style={[styles.row, { justifyContent: 'space-between' }]}>
+          <View style={[styles.row, { justifyContent: 'space-between' }]} wrap={false}>
             <View style={{ width: '48%' }}>
               <PieChart
                 title="Asset Composition"
@@ -676,7 +677,7 @@ export const FactFinderPDF = ({ submission, analysis, date }: FactFinderPDFProps
 
         {/* GOALS */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>FINANCIAL GOALS</Text>
+          <Text style={styles.sectionTitle} minPresenceAhead={90}>FINANCIAL GOALS</Text>
           {goalsList.length > 0 ? (
             <View style={styles.healthTable}>
               <View style={styles.tableHeader}>
@@ -720,7 +721,8 @@ export const FactFinderPDF = ({ submission, analysis, date }: FactFinderPDFProps
         </Text>
 
         <View style={{ flex: 1, marginTop: 20 }}>
-          {Array.from({ length: 25 }).map((_, i) => (
+          {/* 20 ruled lines: the most that fit inside the letterhead margins, so the notes stay on one page */}
+          {Array.from({ length: 20 }).map((_, i) => (
             <View key={i} style={{ borderBottom: '0.5pt solid #e0e0e0', marginBottom: 24, marginHorizontal: 10 }} />
           ))}
         </View>

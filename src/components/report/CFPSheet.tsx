@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from '@react-pdf/renderer';
-import { AnalysisResult, GoalDetail, LiabilityBreakdownItem } from '@/lib/types';
+import { AnalysisResult } from '@/lib/types';
 import { ASSUMPTIONS } from '@/config/assumptions';
-import { formatRupees, formatRupeesShort } from '@/lib/utils';
+import { formatRupees } from '@/lib/utils';
 import { cleanPdfText } from '@/lib/utils';
 
 const styles = StyleSheet.create({
@@ -10,14 +10,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#0f172a',
-    marginTop: 20,
-    marginBottom: 15,
+    marginTop: 6,
+    marginBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#cbd5e1',
     paddingBottom: 5,
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 12,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   assumptionsBox: {
-    marginTop: 20,
+    marginTop: 12,
     padding: 10,
     backgroundColor: '#f8fafc',
     borderWidth: 1,
@@ -175,7 +175,7 @@ export function CFPSheet({ submission, analysis }: { submission: any, analysis: 
       
       {/* 1. Cash Flow */}
       <View style={styles.section} wrap={false}>
-        <Text style={styles.sectionTitle}>{cleanPdfText("1. Cash-Flow Statement (Monthly)")}</Text>
+        <Text style={styles.sectionTitle} minPresenceAhead={70}>{cleanPdfText("1. Cash-Flow Statement (Monthly)")}</Text>
         <View style={styles.row}><Text style={styles.label}>Household Income</Text><Text style={styles.value}>{formatRupees(income)}</Text></View>
         <View style={styles.row}><Text style={styles.label}>Living Expenses</Text><Text style={styles.value}>- {formatRupees(expenses)}</Text></View>
         <View style={styles.row}><Text style={styles.label}>Debt Obligations (EMI)</Text><Text style={styles.value}>- {formatRupees(emi)}</Text></View>
@@ -187,7 +187,7 @@ export function CFPSheet({ submission, analysis }: { submission: any, analysis: 
 
       {/* 2. Emergency Fund */}
       <View style={styles.section} wrap={false}>
-        <Text style={styles.sectionTitle}>{cleanPdfText("2. Emergency Fund")}</Text>
+        <Text style={styles.sectionTitle} minPresenceAhead={70}>{cleanPdfText("2. Emergency Fund")}</Text>
         <View style={styles.row}><Text style={styles.label}>Target ({ASSUMPTIONS.EMERGENCY_FUND_MONTHS}x Expenses)</Text><Text style={styles.value}>{formatRupees(efTarget)}</Text></View>
         <View style={styles.row}><Text style={styles.label}>Current Liquid Assets</Text><Text style={styles.value}>{formatRupees(liquid)}</Text></View>
         {efGap > 0 ? (
@@ -199,7 +199,7 @@ export function CFPSheet({ submission, analysis }: { submission: any, analysis: 
 
       {/* 3. Life Cover */}
       <View style={styles.section} wrap={false}>
-        <Text style={styles.sectionTitle}>{cleanPdfText("3. Life Insurance Adequacy")}</Text>
+        <Text style={styles.sectionTitle} minPresenceAhead={70}>{cleanPdfText("3. Life Insurance Adequacy")}</Text>
         <View style={styles.row}><Text style={styles.label}>Income Replacement ({ASSUMPTIONS.LIFE_COVER_INCOME_MULTIPLIER}x Income)</Text><Text style={styles.value}>{formatRupees(selfIncome * ASSUMPTIONS.LIFE_COVER_INCOME_MULTIPLIER)}</Text></View>
         <View style={styles.row}><Text style={styles.label}>Outstanding Liabilities</Text><Text style={styles.value}>{formatRupees(analysis.totalLiabilities)}</Text></View>
         <View style={styles.totalRow}><Text style={styles.totalLabel}>Human Life Value (HLV) Target</Text><Text style={styles.totalValue}>{formatRupees(hlvTarget)}</Text></View>
@@ -213,7 +213,7 @@ export function CFPSheet({ submission, analysis }: { submission: any, analysis: 
 
       {/* 4. Health Cover */}
       <View style={styles.section} wrap={false}>
-        <Text style={styles.sectionTitle}>{cleanPdfText("4. Health Insurance")}</Text>
+        <Text style={styles.sectionTitle} minPresenceAhead={70}>{cleanPdfText("4. Health Insurance")}</Text>
         <View style={styles.row}><Text style={styles.label}>Family Size</Text><Text style={styles.value}>{familyCount} members</Text></View>
         <View style={styles.row}><Text style={styles.label}>Benchmark Target</Text><Text style={styles.value}>{formatRupees(healthTarget)}</Text></View>
         <View style={styles.row}><Text style={styles.label}>Existing Cover</Text><Text style={styles.value}>{formatRupees(existingHealthCover)}</Text></View>
@@ -227,7 +227,7 @@ export function CFPSheet({ submission, analysis }: { submission: any, analysis: 
       {/* 5. Debt Avalanche */}
       {sortedLiabilities.length > 0 && (
         <View style={styles.section} wrap={false}>
-          <Text style={styles.sectionTitle}>{cleanPdfText("5. Debt Clearance Priority (Avalanche Method)")}</Text>
+          <Text style={styles.sectionTitle} minPresenceAhead={70}>{cleanPdfText("5. Debt Clearance Priority (Avalanche Method)")}</Text>
           <View style={styles.tableHeader}>
             <Text style={[styles.th, { width: '40%' }]}>Loan Type</Text>
             <Text style={[styles.th, { width: '30%', textAlign: 'right' }]}>Outstanding</Text>
@@ -249,7 +249,7 @@ export function CFPSheet({ submission, analysis }: { submission: any, analysis: 
       {/* 6. Goals Funding */}
       {goals.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{cleanPdfText("6. Future Goals Projection")}</Text>
+          <Text style={styles.sectionTitle} minPresenceAhead={70}>{cleanPdfText("6. Future Goals Projection")}</Text>
           {(() => {
             let totalSip = 0;
             let retirementSip = 0;
@@ -312,11 +312,10 @@ export function CFPSheet({ submission, analysis }: { submission: any, analysis: 
 
       {/* 7. Assumptions */}
       <View style={styles.assumptionsBox} wrap={false}>
-        <Text style={[styles.totalLabel, { marginBottom: 4 }]}>{cleanPdfText("Standard Assumptions Used")}</Text>
-        <Text style={styles.text}>- General Inflation: {ASSUMPTIONS.INFLATION_RATE}% p.a.</Text>
-        <Text style={styles.text}>- Education Inflation: {ASSUMPTIONS.EDUCATION_INFLATION_RATE}% p.a.</Text>
-        <Text style={styles.text}>- Pre-Retirement Return: {ASSUMPTIONS.RETIREMENT_RETURN_RATE}% p.a.</Text>
-        <Text style={styles.text}>- Life Cover: {ASSUMPTIONS.LIFE_COVER_INCOME_MULTIPLIER}x Gross Annual Income + Liabilities</Text>
+        <Text style={styles.text}>
+          <Text style={{ fontWeight: 'bold' }}>{cleanPdfText("Assumptions used: ")}</Text>
+          {cleanPdfText(`general inflation ${ASSUMPTIONS.INFLATION_RATE}% p.a.; education inflation ${ASSUMPTIONS.EDUCATION_INFLATION_RATE}% p.a.; pre-retirement return ${ASSUMPTIONS.RETIREMENT_RETURN_RATE}% p.a.; life cover ${ASSUMPTIONS.LIFE_COVER_INCOME_MULTIPLIER}x gross annual income + liabilities.`)}
+        </Text>
       </View>
 
     </View>
