@@ -51,3 +51,7 @@ next-env.d.ts
 
 # scratch
 /.tmp/
+
+# end-to-end test database
+prisma/e2e.db
+prisma/e2e.db-journal

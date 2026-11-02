@@ -1,6 +1,7 @@
 import "server-only";
 import { randomBytes } from "crypto";
 import { prisma } from "./db";
+import { configuredAppUrl } from "./app-url";
 
 /** 16 random bytes → 22-char URL-safe token (128 bits; unguessable). */
 export function newToken(): string {
@@ -28,7 +29,7 @@ export async function createIntakeLink(opts: { clientName?: string | null; clien
 }
 
 export function appBaseUrl(request?: Request): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
+  const configured = configuredAppUrl();
   if (configured) return configured;
   if (request) return new URL(request.url).origin;
   return "http://localhost:3000";

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getAnalysis } from "@/lib/analysis-cache";
 import { categorize, isDisposableBlank } from "@/lib/dashboard";
 import { appBaseUrl } from "@/lib/links";
+import { configuredAppUrl } from "@/lib/app-url";
 import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +50,7 @@ export default async function AdvisorDashboardPage({ searchParams }: { searchPar
   rows.sort((a, b) => (b.submittedAt ?? b.updatedAt).localeCompare(a.submittedAt ?? a.updatedAt));
 
   const h = await headers();
-  const origin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+  const origin = configuredAppUrl() || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
 
   return (
     <>

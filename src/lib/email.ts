@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { SITE } from '@/config/site';
 import { pdfFileName } from './pdf-name';
+import { configuredAppUrl } from './app-url';
 
 // Clean interface for the email sender
 export interface EmailAttachment {
@@ -126,7 +127,7 @@ export async function sendFactFinderEmail(options: {
   const clientName = options.clientName.replace(/[\r\n]+/g, " ").slice(0, 120);
   const subject = `New Client Fact-Finder: ${clientName} — ${options.date}`;
   const safeFilename = pdfFileName(clientName, options.date);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
+  const appUrl = configuredAppUrl();
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2531;">
