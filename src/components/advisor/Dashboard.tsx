@@ -30,7 +30,7 @@ export interface DashboardRow {
 
 const TABS: Category[] = ["new", "reviewed", "met", "in_progress", "not_started"];
 
-export function Dashboard({ rows, baseUrl }: { rows: DashboardRow[]; baseUrl: string }) {
+export function Dashboard({ rows, baseUrl, initialTab }: { rows: DashboardRow[]; baseUrl: string; initialTab?: string }) {
   const router = useRouter();
   const counts = React.useMemo(() => {
     const c = Object.fromEntries(TABS.map((t) => [t, 0])) as Record<Category, number>;
@@ -38,7 +38,16 @@ export function Dashboard({ rows, baseUrl }: { rows: DashboardRow[]; baseUrl: st
     return c;
   }, [rows]);
 
-  const [tab, setTab] = React.useState<Category>(() => (["new", "reviewed", "in_progress", "met"] as Category[]).find((t) => counts[t] > 0) ?? "new");
+  const [tab, setTabState] = React.useState<Category>(() =>
+    TABS.includes(initialTab as Category)
+      ? (initialTab as Category)
+      : ((["new", "reviewed", "in_progress", "met"] as Category[]).find((t) => counts[t] > 0) ?? "new"),
+  );
+  // Keep the chosen filter in the URL so refresh and back/forward keep it.
+  const setTab = (t: Category) => {
+    setTabState(t);
+    window.history.replaceState(null, "", `?tab=${t}`);
+  };
   const [query, setQuery] = React.useState("");
   const [newLinkOpen, setNewLinkOpen] = React.useState(false);
   const [toDelete, setToDelete] = React.useState<DashboardRow | null>(null);
@@ -51,7 +60,7 @@ export function Dashboard({ rows, baseUrl }: { rows: DashboardRow[]; baseUrl: st
   const disposable = rows.filter((r) => r.disposable).length;
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
+    <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-wide text-3xl font-bold tracking-tight">Client intakes</h1>
@@ -65,13 +74,12 @@ export function Dashboard({ rows, baseUrl }: { rows: DashboardRow[]; baseUrl: st
       </div>
 
       <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div role="tablist" aria-label="Filter intakes" className="hide-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:px-0">
+        <div role="group" aria-label="Show intakes" className="hide-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:px-0">
           {TABS.map((t) => (
             <button
               key={t}
-              role="tab"
               type="button"
-              aria-selected={!q && tab === t}
+              aria-pressed={!q && tab === t}
               onClick={() => {
                 setTab(t);
                 setQuery("");
@@ -460,5 +468,5 @@ function relative(iso: string): string {
   if (abs < 3600) return rtf.format(Math.round(diff / 60), "minute");
   if (abs < 86400) return rtf.format(Math.round(diff / 3600), "hour");
   if (abs < 86400 * 30) return rtf.format(Math.round(diff / 86400), "day");
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 }

@@ -108,6 +108,7 @@ export function NativeSelect({
   return (
     <div className="relative">
       <select
+        name={rest.name ?? id}
         {...rest}
         id={id}
         value={value ?? ""}
@@ -156,6 +157,7 @@ export function TextInput({
 
   return (
     <input
+      name={props.name ?? props.id}
       {...props}
       value={local}
       className={cn(inputClass, className)}
@@ -196,6 +198,7 @@ export function TextArea({
   }, []);
   return (
     <textarea
+      name={props.name ?? props.id}
       {...props}
       value={local}
       rows={props.rows ?? 3}

@@ -97,6 +97,7 @@ export function SectionPersonal({ data, update, errors = {} }: SectionProps) {
             type="email"
             inputMode="email"
             autoComplete="email"
+            spellCheck={false}
             value={data.email}
             onChange={(v) => update({ email: v.trim() })}
           />
@@ -243,7 +244,7 @@ export function SectionIncome({ data, update }: SectionProps) {
           <Field label="Please tell us your occupation" htmlFor="occupationOther">
             <TextInput
               id="occupationOther"
-              placeholder="e.g. Freelance designer"
+              placeholder="e.g. Freelance designer…"
               value={data.occupationOther}
               onChange={(v) => update({ occupationOther: v })}
             />
@@ -414,7 +415,7 @@ export function SectionAssets({ data, update }: SectionProps) {
                   <Field label="What is it?" htmlFor={a.desc}>
                     <TextInput
                       id={a.desc}
-                      placeholder="e.g. 30% share in a family business"
+                      placeholder="e.g. 30% share in a family business…"
                       value={data[a.desc]}
                       onChange={(v) => update({ [a.desc]: v })}
                     />
@@ -542,7 +543,7 @@ export function SectionLiabilities({ data, update }: SectionProps) {
                 </div>
                 {"desc" in l ? (
                   <Field label="What kind of loan?" htmlFor={l.desc}>
-                    <TextInput id={l.desc} placeholder="e.g. Gold loan" value={data[l.desc]} onChange={(v) => update({ [l.desc]: v })} />
+                    <TextInput id={l.desc} placeholder="e.g. Gold loan…" value={data[l.desc]} onChange={(v) => update({ [l.desc]: v })} />
                   </Field>
                 ) : null}
               </Reveal>
@@ -681,7 +682,7 @@ export function SectionGoals({ data, update }: SectionProps) {
 
       {goals.length ? (
         <div className="space-y-3">
-          <h3 className="font-semibold">Put them in order of priority, then add details</h3>
+          <h2 className="font-semibold">Put them in order of priority, then add details</h2>
           <p className="text-[15px] text-brand-mutedText">Number 1 is the most important to you. Use the arrows to reorder.</p>
           <ol className="space-y-3">
             {goals.map((goal, i) => {
@@ -808,7 +809,7 @@ export function SectionWrapUp({ data, update, errors = {} }: SectionProps) {
       <Field label="Anything specific you'd like to discuss?" htmlFor="meetingTopics" hint="Optional.">
         <TextArea
           id="meetingTopics"
-          placeholder="e.g. Planning my daughter's education without touching retirement savings"
+          placeholder="e.g. Planning my daughter’s education without touching retirement savings…"
           value={data.meetingTopics}
           onChange={(v) => update({ meetingTopics: v })}
         />

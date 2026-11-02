@@ -20,7 +20,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   return (
     <>
       <SiteHeader />
-      <main className="flex-1">
+      <main id="main" className="flex-1">
         <section className="mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-10 sm:px-6 sm:pt-16 lg:grid-cols-[1.1fr_1fr] lg:gap-20 lg:pb-24 lg:pt-24">
           <div className="max-w-xl">
             <h1 className="font-wide text-[2.5rem] font-bold leading-[1.05] tracking-[-0.02em] sm:text-6xl">

@@ -49,7 +49,7 @@ export default async function SubmissionReportPage({ params }: { params: Promise
   return (
     <>
       <AdvisorHeader />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+      <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <Link href="/advisor" className="inline-flex items-center gap-1 rounded-md text-[15px] font-medium text-brand-blue hover:underline">
           <ChevronLeft className="h-4 w-4" aria-hidden /> All client intakes
         </Link>
@@ -61,7 +61,7 @@ export default async function SubmissionReportPage({ params }: { params: Promise
               {subtitle.join(", ")}
               {subtitle.length ? <br /> : null}
               Submitted{" "}
-              {submission.submittedAt?.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) ?? "date unknown"}
+              {submission.submittedAt?.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" }) ?? "date unknown"}
               {minutes ? `, took about ${minutes} min` : ""}
             </p>
           </div>
@@ -117,7 +117,7 @@ export default async function SubmissionReportPage({ params }: { params: Promise
               <StatusControl id={submission.id} status={submission.status} />
               {submission.reviewedAt ? (
                 <p className="mt-2 text-sm text-brand-mutedText">
-                  Reviewed {submission.reviewedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                  Reviewed {submission.reviewedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" })}
                 </p>
               ) : null}
               <dl className="mt-4 space-y-2 border-t border-brand-border pt-4 text-[15px]">

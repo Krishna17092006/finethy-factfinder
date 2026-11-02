@@ -151,8 +151,8 @@ export function NotesPanel({ id, notes }: { id: string; notes: NoteView[] }) {
             <li key={n.id} className="group rounded-lg bg-brand-page p-3">
               <p className="whitespace-pre-wrap text-[15px] text-brand-darkText">{n.content}</p>
               <div className="mt-2 flex items-center justify-between">
-                <time className="text-sm text-brand-mutedText" dateTime={n.createdAt}>
-                  {new Date(n.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                <time suppressHydrationWarning className="text-sm text-brand-mutedText" dateTime={n.createdAt}>
+                  {new Date(n.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" })}
                 </time>
                 <button
                   type="button"

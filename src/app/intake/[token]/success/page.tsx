@@ -28,7 +28,7 @@ export default async function SuccessPage({ params }: { params: Promise<{ token:
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-14 sm:px-6 sm:py-20">
+      <main id="main" className="mx-auto w-full max-w-2xl flex-1 px-4 py-14 sm:px-6 sm:py-20">
         <CheckCircle2 className="h-12 w-12 text-health-green" aria-hidden />
         <h1 className="mt-5 font-wide text-4xl font-bold tracking-tight sm:text-5xl">
           {firstName ? `Thank you, ${firstName}.` : "Thank you."}

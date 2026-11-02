@@ -232,7 +232,7 @@ export function IntakeForm({ token, initial }: { token: string; initial: FormDat
     return (
       <>
         {header}
-        <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+        <main id="main" className="mx-auto w-full max-w-2xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
           <h1 className="font-wide text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
             {data.fullName ? `Namaste, ${String(data.fullName).split(/\s+/)[0]}.` : "Namaste."}
           </h1>
@@ -292,7 +292,7 @@ export function IntakeForm({ token, initial }: { token: string; initial: FormDat
         </div>
       </nav>
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-32 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
+      <main id="main" className="mx-auto w-full max-w-3xl flex-1 px-4 pb-32 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
         <p className="tabular text-[15px] font-semibold text-brand-orange-deep">
           Step {step + 1} of {STEPS.length}
         </p>
@@ -325,7 +325,7 @@ export function IntakeForm({ token, initial }: { token: string; initial: FormDat
             ) : (
               <Button variant="cta" size="lg" onClick={onSubmit} disabled={submitting} aria-busy={submitting}>
                 {submitting ? <Loader2 className="animate-spin" aria-hidden /> : null}
-                {submitting ? "Sending" : "Submit my answers"}
+                {submitting ? "Sending…" : "Submit my answers"}
               </Button>
             )}
           </div>
@@ -340,7 +340,7 @@ function SaveIndicator({ state }: { state: SaveState }) {
     <p role="status" aria-live="polite" className="flex min-w-[6rem] items-center justify-end gap-1.5 text-sm text-brand-mutedText">
       {state === "saving" ? (
         <>
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Saving
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Saving…
         </>
       ) : state === "saved" ? (
         <>

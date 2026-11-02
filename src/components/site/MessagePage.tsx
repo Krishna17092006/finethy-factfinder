@@ -8,7 +8,7 @@ export function MessagePage({ title, body, action }: { title: string; body: stri
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-16 sm:px-6 sm:py-24">
+      <main id="main" className="mx-auto w-full max-w-2xl flex-1 px-4 py-16 sm:px-6 sm:py-24">
         <h1 className="font-wide text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
         <p className="mt-4 text-lg leading-relaxed">{body}</p>
         <div className="mt-8 flex flex-wrap gap-3">

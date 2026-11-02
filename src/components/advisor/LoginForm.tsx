@@ -36,7 +36,7 @@ export function LoginForm({ next }: { next: string }) {
         <label htmlFor="username" className="block font-semibold text-brand-darkText">
           Username
         </label>
-        <input id="username" name="username" autoComplete="username" required className={inputClass} autoFocus />
+        <input id="username" name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} required className={inputClass} />
       </div>
       <div className="space-y-2">
         <label htmlFor="password" className="block font-semibold text-brand-darkText">

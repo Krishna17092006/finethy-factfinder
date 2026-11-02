@@ -33,7 +33,15 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: rgba(47, 90, 168, 0.12);
+    touch-action: manipulation;
     scroll-padding-top: 6rem;
+    scroll-padding-bottom: 6.5rem; /* keep focused fields clear of the fixed Back/Next bar on phones */
+  }
+  @media (min-width: 640px) {
+    html {
+      scroll-padding-bottom: 1rem;
+    }
   }
 
   body {

@@ -63,6 +63,7 @@ export function RupeeInput({
       </span>
       <input
         id={id}
+        name={id}
         type="text"
         inputMode="numeric"
         autoComplete="off"

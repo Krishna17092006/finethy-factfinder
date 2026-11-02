@@ -10,7 +10,8 @@ import { headers } from "next/headers";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Client intakes", robots: { index: false, follow: false } };
 
-export default async function AdvisorDashboardPage() {
+export default async function AdvisorDashboardPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const { tab } = await searchParams;
   const submissions = await prisma.submission.findMany({
     include: { link: true },
     orderBy: [{ submittedAt: "desc" }, { updatedAt: "desc" }],
@@ -53,7 +54,7 @@ export default async function AdvisorDashboardPage() {
   return (
     <>
       <AdvisorHeader />
-      <Dashboard rows={rows} baseUrl={origin || appBaseUrl()} />
+      <Dashboard rows={rows} baseUrl={origin || appBaseUrl()} initialTab={tab} />
     </>
   );
 }

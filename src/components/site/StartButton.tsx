@@ -9,7 +9,7 @@ export function StartButton({ children = "Start the fact-finder" }: { children?:
   return (
     <Button type="submit" variant="cta" size="lg" className="w-full sm:w-auto" disabled={pending} aria-busy={pending}>
       {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}
-      {pending ? "Opening your form" : children}
+      {pending ? "Opening your form…" : children}
     </Button>
   );
 }

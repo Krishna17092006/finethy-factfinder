@@ -10,7 +10,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const safeNext = next && next.startsWith("/advisor") && !next.startsWith("//") ? next : "/advisor";
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-16">
+    <main id="main" className="flex flex-1 items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
         <Logo className="h-10" priority />
         <h1 className="mt-8 font-wide text-3xl font-bold tracking-tight">Advisor sign in</h1>
