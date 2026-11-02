@@ -1,81 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { sanitizeIntakePayload } from "@/lib/intake-schema";
+import { loadIntake } from "@/lib/intake-access";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
-) {
+type Params = { params: Promise<{ token: string }> };
+
+/** Returns the client's own draft (only the fields they can see/edit). */
+export async function GET(_request: NextRequest, { params }: Params) {
   const { token } = await params;
-  
-  const link = await prisma.intakeLink.findUnique({
-    where: { token },
-    include: { submission: true },
-  });
-
-  if (!link) {
-    return NextResponse.json({ error: 'Invalid or expired link' }, { status: 404 });
-  }
-
-  // If no submission exists, create a draft
-  let submission = link.submission;
-  if (!submission) {
-    submission = await prisma.submission.create({
-      data: {
-        linkId: link.id,
-        status: 'draft',
-        fullName: link.clientName || null,
-        mobile: link.clientPhone || null,
-      },
-    });
-  }
-
-  return NextResponse.json({
-    submission,
-    clientName: link.clientName,
-    clientPhone: link.clientPhone,
-  });
+  const result = await loadIntake(token);
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+  return NextResponse.json({ submission: result.clientView, status: result.submission.status });
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
-) {
+/** Autosave. Only allow-listed fields are written; the form stays editable until submitted. */
+export async function PUT(request: NextRequest, { params }: Params) {
   const { token } = await params;
-  const body = await request.json();
-
-  const link = await prisma.intakeLink.findUnique({
-    where: { token },
-    include: { submission: true },
-  });
-
-  if (!link || !link.submission) {
-    return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+  if (!rateLimit(`save:${clientIp(request.headers)}`, 240, 60_000).ok) {
+    return NextResponse.json({ error: "Too many saves, slow down" }, { status: 429 });
   }
 
-  // Don't allow editing already-submitted forms
-  if (link.submission.status === 'submitted') {
-    return NextResponse.json({ error: 'Form already submitted' }, { status: 400 });
+  const result = await loadIntake(token);
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+  if (result.submission.status !== "draft") {
+    return NextResponse.json({ error: "This form has already been submitted" }, { status: 409 });
   }
 
-  // Extract currentStep and data fields
-  const { currentStep, ...data } = body;
-  
-  // Sanitize payload to avoid PrismaValidationError
-  delete data.id;
-  delete data.linkId;
-  delete data.createdAt;
-  delete data.updatedAt;
-  delete data.hasOwnHouse_temp;
-  delete data.riskQ3_neutral;
-  delete data.analysisJson;
+  const body = await request.json().catch(() => null);
+  const { data, rejected } = sanitizeIntakePayload(body);
+  delete data.consentGiven; // consent is only recorded on submit
 
-  const updated = await prisma.submission.update({
-    where: { id: link.submission.id },
-    data: {
-      ...data,
-      currentStep: currentStep ?? link.submission.currentStep,
-    },
-  });
-
-  return NextResponse.json({ success: true, submission: updated });
+  await prisma.submission.update({ where: { id: result.submission.id }, data });
+  return NextResponse.json({ success: true, rejected });
 }

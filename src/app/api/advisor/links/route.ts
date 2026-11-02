@@ -1,48 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { nanoid } from 'nanoid';
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/db";
+import { createIntakeLink, intakeUrl, whatsappShareUrl } from "@/lib/links";
+
+const NewLink = z.object({
+  clientName: z.string().trim().max(120).optional().nullable(),
+  clientPhone: z
+    .string()
+    .trim()
+    .max(20)
+    .regex(/^[0-9+\s-]*$/, "Phone can only contain digits")
+    .optional()
+    .nullable(),
+});
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { clientName, clientPhone } = body;
+  const parsed = NewLink.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
+  }
+  const clientName = parsed.data.clientName || null;
+  const clientPhone = parsed.data.clientPhone?.replace(/[^0-9]/g, "") || null;
 
-  const token = nanoid(12);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-  const link = await prisma.intakeLink.create({
-    data: {
-      token,
-      clientName: clientName || null,
-      clientPhone: clientPhone || null,
-    },
-  });
-
-  const fullUrl = `${appUrl}/intake/${token}`;
+  const link = await createIntakeLink({ clientName, clientPhone });
+  const url = intakeUrl(link.token, request);
 
   return NextResponse.json({
     success: true,
-    link: {
-      ...link,
-      url: fullUrl,
-      whatsappUrl: `https://wa.me/${clientPhone ? clientPhone.replace(/[^0-9]/g, '') : ''}?text=${encodeURIComponent(`Namaste! To make the most of our meeting, please fill this short form (10–15 min): ${fullUrl} — FINETHY`)}`,
-    },
+    link: { ...link, url, whatsappUrl: whatsappShareUrl(url, clientPhone, clientName) },
   });
 }
 
 export async function GET() {
   const links = await prisma.intakeLink.findMany({
-    include: {
-      submission: {
-        select: {
-          id: true,
-          status: true,
-          fullName: true,
-          submittedAt: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
+    include: { submission: { select: { id: true, status: true, fullName: true, submittedAt: true } } },
+    orderBy: { createdAt: "desc" },
   });
-
   return NextResponse.json({ links });
 }

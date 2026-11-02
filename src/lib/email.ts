@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer';
+import { SITE } from '@/config/site';
+import { pdfFileName } from './pdf-name';
 
 // Clean interface for the email sender
 export interface EmailAttachment {
@@ -100,6 +102,15 @@ export function getEmailProvider(): EmailProvider {
   return emailProvider;
 }
 
+/** True when real SMTP delivery is configured (otherwise emails go to the console). */
+export function emailDeliveryConfigured(): boolean {
+  return Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+}
+
 // High-level function: send the fact-finder report email
 export async function sendFactFinderEmail(options: {
   clientName: string;
@@ -108,32 +119,37 @@ export async function sendFactFinderEmail(options: {
   pdfBuffer: Buffer;
   date: string;
 }): Promise<EmailResult> {
-  const advisorEmail = process.env.ADVISOR_EMAIL || 'SUPPORT@FINETHY.CO';
+  const advisorEmail = process.env.ADVISOR_EMAIL || SITE.email;
   const provider = getEmailProvider();
 
-  const subject = `New Client Fact-Finder: ${options.clientName} — ${options.date}`;
-  const safeFilename = `FactFinder_${options.clientName.replace(/[^a-zA-Z0-9]/g, '_')}_${options.date.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  // Client-supplied text: strip newlines from the subject, escape it in HTML.
+  const clientName = options.clientName.replace(/[\r\n]+/g, " ").slice(0, 120);
+  const subject = `New Client Fact-Finder: ${clientName} — ${options.date}`;
+  const safeFilename = pdfFileName(clientName, options.date);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
 
   const html = `
-    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2531;">
       <div style="background: #2f5aa8; color: white; padding: 16px 24px; border-radius: 12px 12px 0 0;">
         <h2 style="margin: 0; font-size: 18px;">FINETHY Fact-Finder</h2>
-        <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.85;">New Client Intake Submitted</p>
+        <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.85;">New client intake submitted</p>
       </div>
       <div style="border: 1px solid #e2e8f0; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
         <p style="margin: 0 0 12px; font-size: 15px;">A new client intake has been submitted.</p>
         <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-          <p style="margin: 0 0 8px; font-weight: 600;">${options.clientName}</p>
-          <p style="margin: 0; font-size: 14px; color: #64748b;">Key flags: 🔴 ${options.redCount} 🟡 ${options.yellowCount}</p>
+          <p style="margin: 0 0 8px; font-weight: 600;">${escapeHtml(clientName)}</p>
+          <p style="margin: 0; font-size: 14px; color: #475569;">Key flags: ${options.redCount} red, ${options.yellowCount} yellow</p>
         </div>
-        <p style="margin: 0 0 8px; font-size: 14px; color: #64748b;">PDF report attached.</p>
+        <p style="margin: 0 0 8px; font-size: 14px; color: #475569;">The full PDF report is attached.${
+          appUrl ? ` You can also open it in the <a href="${escapeHtml(appUrl)}/advisor" style="color:#2f5aa8;">advisor dashboard</a>.` : ""
+        }</p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;" />
-        <p style="margin: 0; font-size: 12px; color: #94a3b8;">FINETHY LLP &middot; ARN-28883</p>
+        <p style="margin: 0; font-size: 12px; color: #64748b;">${SITE.legalName} &middot; ${SITE.arn}</p>
       </div>
     </div>
   `;
 
-  const text = `New Client Fact-Finder: ${options.clientName}\n\nA new client intake has been submitted. Key flags: 🔴 ${options.redCount} 🟡 ${options.yellowCount}. PDF report attached.\n\n— FINETHY LLP`;
+  const text = `New Client Fact-Finder: ${clientName}\n\nA new client intake has been submitted. Key flags: ${options.redCount} red, ${options.yellowCount} yellow. PDF report attached.\n\n— ${SITE.legalName}`;
 
   return provider.sendEmail({
     to: advisorEmail,

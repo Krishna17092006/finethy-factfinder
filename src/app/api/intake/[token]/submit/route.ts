@@ -1,106 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { NextRequest, NextResponse, after } from "next/server";
+import { prisma } from "@/lib/db";
+import { sanitizeIntakePayload, submissionProblem } from "@/lib/intake-schema";
+import { loadIntake } from "@/lib/intake-access";
+import { runAnalysis } from "@/lib/analysis";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
-) {
+export const runtime = "nodejs";
+
+export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const body = await request.json();
-
-  const link = await prisma.intakeLink.findUnique({
-    where: { token },
-    include: { submission: true },
-  });
-
-  if (!link || !link.submission) {
-    return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+  if (!rateLimit(`submit:${clientIp(request.headers)}`, 20, 60_000).ok) {
+    return NextResponse.json({ error: "Too many attempts, please wait a minute" }, { status: 429 });
   }
 
-  if (link.submission.status === 'submitted') {
-    return NextResponse.json({ error: 'Already submitted' }, { status: 400 });
+  const result = await loadIntake(token);
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+  if (result.submission.status !== "draft") {
+    // Idempotent: a double-tap on Submit should still land on the thank-you page.
+    return NextResponse.json({ success: true, alreadySubmitted: true });
   }
 
-  // Save any final data from the body
-  const { currentStep, ...finalData } = body;
-  
-  // Sanitize payload to avoid PrismaValidationError
-  delete finalData.id;
-  delete finalData.linkId;
-  delete finalData.createdAt;
-  delete finalData.updatedAt;
-  delete finalData.hasOwnHouse_temp;
-  delete finalData.riskQ3_neutral;
+  const body = await request.json().catch(() => null);
+  const { data } = sanitizeIntakePayload(body);
+  const merged = { ...result.submission, ...data };
 
-  // Validate required fields
-  const name = finalData.fullName || link.submission.fullName;
-  const mobile = finalData.mobile || link.submission.mobile;
-  const consent = finalData.consentGiven ?? link.submission.consentGiven;
+  const problem = submissionProblem(merged);
+  if (problem) return NextResponse.json({ error: problem }, { status: 400 });
 
-  if (!name || !mobile) {
-    return NextResponse.json(
-      { error: 'Name and mobile number are required' },
-      { status: 400 }
-    );
-  }
+  // Analysis is computed before saving so the record is never "submitted" without it.
+  const analysis = runAnalysis(merged);
 
-  if (!consent) {
-    return NextResponse.json(
-      { error: 'Please provide your consent to proceed' },
-      { status: 400 }
-    );
-  }
-
-  // Update and mark as submitted
   const submission = await prisma.submission.update({
-    where: { id: link.submission.id },
+    where: { id: result.submission.id },
     data: {
-      ...finalData,
-      status: 'submitted',
+      ...data,
+      consentGiven: true,
+      status: "submitted",
       submittedAt: new Date(),
-      currentStep: 8,
+      currentStep: 9,
+      analysisJson: JSON.stringify(analysis),
     },
   });
 
-  // Run analysis
-  let analysisJson = null;
-  try {
-    const { runAnalysis } = await import('@/lib/analysis');
-    const analysis = runAnalysis(submission);
-    analysisJson = JSON.stringify(analysis);
-
-    await prisma.submission.update({
-      where: { id: submission.id },
-      data: { analysisJson },
-    });
-
-    // Try to send email
+  // Build the PDF and email the advisor after the client already has their answer.
+  after(async () => {
     try {
-      const { sendFactFinderEmail } = await import('@/lib/email');
-      const today = new Date().toLocaleDateString('en-IN', {
-        day: '2-digit', month: 'short', year: 'numeric'
-      });
-
-      const { generatePdfBuffer } = await import('@/lib/pdf');
-      const pdfBuffer = await generatePdfBuffer(submission, analysis);
-
-      await sendFactFinderEmail({
-        clientName: submission.fullName || 'Unknown Client',
-        redCount: analysis.redCount,
-        yellowCount: analysis.yellowCount,
-        pdfBuffer,
-        date: today,
-      });
-    } catch (emailError) {
-      console.error('Email send failed (non-blocking):', emailError);
+      const { sendReportEmail } = await import("@/lib/notify");
+      await sendReportEmail(submission, analysis);
+    } catch (error) {
+      console.error("Advisor email failed (submission is saved):", error);
     }
-  } catch (analysisError) {
-    console.error('Analysis failed (non-blocking):', analysisError);
-  }
-
-  return NextResponse.json({
-    success: true,
-    message: 'Thank you! Your details have been sent to our team.',
-    submissionId: submission.id,
   });
+
+  return NextResponse.json({ success: true });
 }

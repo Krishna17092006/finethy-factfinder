@@ -1,35 +1,34 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 
 export async function GET() {
   const submissions = await prisma.submission.findMany({
-    where: { status: { not: 'draft' } },
-    include: {
-      link: true,
+    where: { status: { not: "draft" } },
+    select: {
+      id: true,
+      fullName: true,
+      mobile: true,
+      city: true,
+      status: true,
+      submittedAt: true,
+      analysisJson: true,
     },
-    orderBy: { submittedAt: 'desc' },
+    orderBy: { submittedAt: "desc" },
   });
 
-  const result = submissions.map((sub) => {
+  const result = submissions.map(({ analysisJson, ...sub }) => {
     let redCount = 0;
     let yellowCount = 0;
-    if (sub.analysisJson) {
+    if (analysisJson) {
       try {
-        const analysis = JSON.parse(sub.analysisJson);
+        const analysis = JSON.parse(analysisJson);
         redCount = analysis.redCount || 0;
         yellowCount = analysis.yellowCount || 0;
-      } catch {}
+      } catch {
+        // ignore corrupt cache; the report page recomputes it
+      }
     }
-    return {
-      id: sub.id,
-      fullName: sub.fullName,
-      mobile: sub.mobile,
-      city: sub.city,
-      status: sub.status,
-      submittedAt: sub.submittedAt,
-      redCount,
-      yellowCount,
-    };
+    return { ...sub, redCount, yellowCount };
   });
 
   return NextResponse.json({ submissions: result });
