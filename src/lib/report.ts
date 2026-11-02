@@ -1,5 +1,5 @@
 import { AnalysisResult, HealthMetricResult } from "./types";
-import { formatRupees, formatRupeesShort, calculateAge, cleanString } from "./utils";
+import { formatRupeesShort, calculateAge, cleanString } from "./utils";
 
 export function generateObservation(metric: HealthMetricResult, submission: any): string | null {
   const v = metric.value;
@@ -199,9 +199,16 @@ export function generateAdvisorBrief(submission: any, analysis: AnalysisResult):
     brief += `Priorities for the meeting: ` + uniquePriorities.map((p, i) => `(${i+1}) ${p}`).join(", ") + ". ";
   }
 
-  // 5. Past bad experience
-  if (submission.pastBadExperience) {
-    brief += `\n\nNote: Client mentioned a bad past experience: "${submission.pastBadExperience}" — be ready to address trust concerns.`;
+  // 5. Past experience the client chose to share (Q15)
+  const pastExperience = typeof submission.riskQ15 === "string" ? submission.riskQ15.trim() : "";
+  if (pastExperience) {
+    brief += `\n\nNote: In their own words: "${pastExperience}" — be ready to address any trust concerns this raises.`;
+  }
+
+  // 6. What they want to discuss
+  const topics = typeof submission.meetingTopics === "string" ? submission.meetingTopics.trim() : "";
+  if (topics) {
+    brief += `\n\nThey would like to discuss: "${topics}".`;
   }
 
   return brief;
@@ -237,8 +244,9 @@ export function generateQuestions(submission: any, analysis: AnalysisResult): st
 
   // Goals tension
   if (submission.goalsList && submission.goalsList.length > 1) {
-    const hasEducation = submission.goalsList.some((g: any) => g.name.toLowerCase().includes('education'));
-    const hasRetirement = submission.goalsList.some((g: any) => g.name.toLowerCase().includes('retirement'));
+    const names: string[] = submission.goalsList.map((g: { name?: unknown }) => String(g?.name ?? "").toLowerCase());
+    const hasEducation = names.some((n) => n.includes("education"));
+    const hasRetirement = names.some((n) => n.includes("retirement"));
     if (hasEducation && hasRetirement) {
       q.push("How would you prioritise between children's education and retirement if you had to choose? Is there flexibility on the education target amount or year?");
     }

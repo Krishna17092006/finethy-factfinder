@@ -10,7 +10,7 @@ import {
   RETIREMENT_CONFIG,
   HealthStatus
 } from "@/config/healthRanges";
-import { formatIndianNumber, formatRupees, formatPercent, calculateAge } from "./utils";
+import { formatRupees, formatPercent, calculateAge } from "./utils";
 import { generateObservation, generateAdvisorBrief, generateQuestions } from "./report";
 import { calculateRiskProfile } from "./risk";
 
@@ -65,9 +65,19 @@ function getFamilyMemberCount(sub: any): number {
 }
 
 import { deriveData } from "./derive";
-
 import { runSanityCheck } from "./sanity";
 
+/**
+ * Bump whenever the maths changes. Stored analyses with an older version are
+ * recomputed automatically (see lib/analysis-cache.ts), so existing reports
+ * pick up fixes without anyone re-submitting.
+ *
+ * v2 (2026-11): EPF/PPF/NPS counted, "None" dependents ignored, emergency fund
+ *               single source of truth, goals in client priority order.
+ */
+export const ANALYSIS_VERSION = 2;
+
+ 
 export function runAnalysis(rawSubmission: any): AnalysisResult {
   const submission = deriveData(rawSubmission);
   const metrics: HealthMetricResult[] = [];
@@ -83,8 +93,8 @@ export function runAnalysis(rawSubmission: any): AnalysisResult {
   const annualIncome = submission.householdAnnualIncome || 0;
   const monthlyIncome = annualIncome / 12;
   const monthlyExpenses = submission.monthlyExpenses || 0;
-  
-  // If the user's computed savings rate is missing, fallback to 0
+
+  // Household surplus is the savings capacity used by every metric
   const monthlySavings = submission.householdMonthlySurplus || 0;
   const totalMonthlyEMIs = submission.totalMonthlyEMIs || 0;
   const monthlySurplus = submission.householdMonthlySurplus || 0;
@@ -96,22 +106,8 @@ export function runAnalysis(rawSubmission: any): AnalysisResult {
     incomeBasis: annualIncome 
   });
 
-  let dependentsCount = 0;
-  if (submission.totalDependents !== undefined && submission.totalDependents !== null) {
-    dependentsCount = submission.totalDependents;
-  } else {
-    if (submission.maritalStatus === "Married" && !submission.spouseEarning) {
-      dependentsCount += 1;
-    }
-    dependentsCount += (submission.childrenCount || 0);
-    
-    if (submission.dependentTypes) {
-      try {
-        const types = JSON.parse(submission.dependentTypes);
-        if (Array.isArray(types)) dependentsCount += types.length;
-      } catch (e) {}
-    }
-  }
+  // Always set by deriveData ("None" is not counted)
+  const dependentsCount: number = submission.totalDependents || 0;
 
   // 1. Net worth
   metrics.push({
@@ -126,9 +122,9 @@ export function runAnalysis(rawSubmission: any): AnalysisResult {
     tooltip: "Your total wealth after paying off all debts.",
   });
 
-  // 2. Emergency fund ratio
-  if (monthlyExpenses > 0) {
-    const efMonths = liquidAssets / monthlyExpenses;
+  // 2. Emergency fund ratio: the same derived value the risk engine uses
+  if (monthlyExpenses > 0 && typeof submission.emergencyFundRatio === "number") {
+    const efMonths: number = submission.emergencyFundRatio;
     const efRange = DEFAULT_HEALTH_RANGES["emergencyFundRatio"];
     let status: HealthStatus = "RED";
     if (efMonths >= efRange.greenMin!) status = "GREEN";
@@ -172,9 +168,6 @@ export function runAnalysis(rawSubmission: any): AnalysisResult {
   if (monthlyIncome > 0) {
     const emiRatio = (totalMonthlyEMIs / monthlyIncome) * 100;
     const emiRange = DEFAULT_HEALTH_RANGES["emiToIncomeRatio"];
-    let status: HealthStatus = "GREEN";
-    if (emiRatio >= emiRange.redMin!) status = "RED";
-    else if (emiRatio > emiRange.greenMax!) status = "YELLOW";
     let emiStatus: HealthStatus = "GREEN";
     if (emiRatio >= emiRange.redMin!) emiStatus = "RED";
     else if (emiRatio > emiRange.greenMax!) emiStatus = "YELLOW";
@@ -487,14 +480,10 @@ export function runAnalysis(rawSubmission: any): AnalysisResult {
     addLiab("Other Loans", submission.otherLoansOutstanding || 0, submission.otherLoansEMI || 0, "#94a3b8");
   }
 
-  let topGoal = null;
-  try {
-    if (submission.goalsList && submission.goalsList.length > 0) {
-      topGoal = submission.goalsList[0].name;
-    }
-  } catch(e) {}
+  const topGoal: string | null = submission.goalsList?.[0]?.name ?? null;
 
   const result: AnalysisResult = {
+    analysisVersion: ANALYSIS_VERSION,
     netWorth,
     totalAssets,
     totalLiabilities,
@@ -512,7 +501,7 @@ export function runAnalysis(rawSubmission: any): AnalysisResult {
     advisorBrief: "", // filled in next step
     assetBreakdown,
     liabilityBreakdown,
-    riskProfile: calculateRiskProfile(submission, metrics),
+    riskProfile: calculateRiskProfile(submission),
     sanityFlags,
   };
 

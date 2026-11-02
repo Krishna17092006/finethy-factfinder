@@ -34,7 +34,7 @@ export const DEFAULT_HEALTH_RANGES: Record<string, HealthRange> = {
   emergencyFundRatio: {
     key: "emergencyFundRatio",
     name: "Emergency Fund",
-    description: "Liquid assets as months of expenses",
+    description: "Bank savings and FDs as months of expenses",
     unit: "months",
     greenMin: 6,
     yellowMin: 3,

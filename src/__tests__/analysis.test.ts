@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { runAnalysis } from '../lib/analysis';
-import { deriveData } from '../lib/derive';
 
 describe('Analysis Engine', () => {
   it('Liquidity Ratio bounds - exactly at 10% is GREEN, 8.7% is YELLOW', () => {
@@ -25,34 +24,38 @@ describe('Analysis Engine', () => {
     expect(liqAt8.status).toBe('YELLOW');
   });
 
-  it('Debt-to-Assets and Real Estate Concentration return identical values ONLY when mathematically equivalent', () => {
-    // Case 1: Sole asset is house, sole debt is home loan. Both should be 89.7%
-    const subIdentical = {
-      ownHouseValue: 10000000,
-      bankSavingsFDValue: 1148272,
-      homeLoanOutstanding: 10000000,
-    };
-    const resIdentical = runAnalysis(subIdentical);
-    const debtIdentical = resIdentical.metrics.find(m => m.key === 'debtToAssetsRatio')!;
-    const reIdentical = resIdentical.metrics.find(m => m.key === 'realEstateConcentration')!;
-    expect(debtIdentical.value).toBeCloseTo(89.7, 1);
-    expect(reIdentical.value).toBeCloseTo(89.7, 1);
-    expect(debtIdentical.value).toEqual(reIdentical.value);
+  it('Real estate concentration counts investment property only (the home is excluded)', () => {
+    // Only asset is the home: debt-to-assets is high, but there is no investment-property concentration.
+    const homeOnly = runAnalysis({ ownHouseValue: 10000000, bankSavingsFDValue: 1148272, homeLoanOutstanding: 10000000 });
+    expect(homeOnly.metrics.find(m => m.key === 'debtToAssetsRatio')!.value).toBeCloseTo(89.7, 1);
+    expect(homeOnly.metrics.find(m => m.key === 'realEstateConcentration')!.value).toBe(0);
 
-    // Case 2: User has other assets and other debts. They MUST diverge.
-    const subDiverge = {
-      ownHouseValue: 10000000, // 1Cr
-      homeLoanOutstanding: 5000000, // 50L
-      bankSavingsFDValue: 2000000, // 20L
-      personalLoanOutstanding: 1000000, // 10L
-    };
-    // Total Assets = 1.2Cr. Total Debt = 60L. RE Assets = 1Cr.
-    // Debt-to-Assets = 60/120 = 50%. RE = 100/120 = 83.33%
-    const resDiverge = runAnalysis(subDiverge);
-    const debtDiverge = resDiverge.metrics.find(m => m.key === 'debtToAssetsRatio')!;
-    const reDiverge = resDiverge.metrics.find(m => m.key === 'realEstateConcentration')!;
-    expect(debtDiverge.value).toBe(50);
-    expect(reDiverge.value).toBeCloseTo(83.3, 1);
-    expect(debtDiverge.value).not.toEqual(reDiverge.value);
+    // 1Cr home + 20L bank + 30L plot; 60L debt -> debt/assets 40%, investment RE 20%
+    const mixed = runAnalysis({
+      ownHouseValue: 10000000,
+      bankSavingsFDValue: 2000000,
+      investmentPropertyValue: 3000000,
+      homeLoanOutstanding: 5000000,
+      personalLoanOutstanding: 1000000,
+    });
+    expect(mixed.metrics.find(m => m.key === 'debtToAssetsRatio')!.value).toBe(40);
+    expect(mixed.metrics.find(m => m.key === 'realEstateConcentration')!.value).toBe(20);
+  });
+
+  it('counts EPF + PPF + NPS in net worth', () => {
+    const res = runAnalysis({ hasRetirementAccounts: true, epfValue: 100000, ppfValue: 600000, npsValue: 500000 });
+    expect(res.totalAssets).toBe(1200000);
+    expect(res.assetBreakdown.find(a => a.category.startsWith('Retirement'))!.value).toBe(1200000);
+  });
+
+  it('uses one emergency-fund number for the health table and the risk engine', () => {
+    const res = runAnalysis({ bankSavingsFDValue: 300000, cashAtHandValue: 200000, monthlyExpenses: 100000, grossAnnualIncome: 2400000 });
+    const ef = res.metrics.find(m => m.key === 'emergencyFundRatio')!;
+    expect(ef.value).toBe(3); // bank + FDs / expenses
+    expect(res.riskProfile!.capacityConstraint).not.toMatch(/insufficient emergency/i);
+  });
+
+  it('stamps the engine version', () => {
+    expect(runAnalysis({}).analysisVersion).toBeGreaterThanOrEqual(2);
   });
 });

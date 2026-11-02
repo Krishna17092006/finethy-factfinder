@@ -86,25 +86,31 @@ export function formatPercent(num: number | null | undefined): string {
 }
 
 /**
+ * Parse a date of birth. The form stores DD/MM/YYYY; ISO strings are accepted too.
+ * Returns null for anything that is not a real calendar date.
+ */
+export function parseDateOfBirth(dob: unknown): Date | null {
+  if (typeof dob !== "string" || !dob.trim()) return null;
+  const s = dob.trim();
+  const dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+  let birth: Date;
+  if (dmy) {
+    const [d, m, y] = [Number(dmy[1]), Number(dmy[2]), Number(dmy[3])];
+    birth = new Date(y, m - 1, d);
+    // Reject rollovers such as 31/02/1990
+    if (birth.getFullYear() !== y || birth.getMonth() !== m - 1 || birth.getDate() !== d) return null;
+  } else {
+    birth = new Date(s);
+  }
+  return isNaN(birth.getTime()) ? null : birth;
+}
+
+/**
  * Calculate age from date of birth string
  */
 export function calculateAge(dob: string | null | undefined): number | null {
-  if (!dob) return null;
-  
-  // Handle DD/MM/YYYY format
-  let birth: Date;
-  if (dob.includes('/') && dob.split('/')[0].length === 2) {
-    const parts = dob.split('/');
-    if (parts.length === 3) {
-      birth = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    } else {
-      birth = new Date(dob);
-    }
-  } else {
-    birth = new Date(dob);
-  }
-  
-  if (isNaN(birth.getTime())) return null;
+  const birth = parseDateOfBirth(dob);
+  if (!birth) return null;
   const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
@@ -154,4 +160,22 @@ export function cleanPdfText(str: string | null | undefined): string {
     .replace(/\u2022/g, "-")                  // Bullet •
     .replace(/[\u2013\u2014]/g, " - ")        // En-dash – / Em-dash —
     .replace(/\u20B9/g, "Rs.");               // Rupee sign ₹
+}
+
+/** Web formatting with the ₹ sign (the PDF uses "Rs." via formatRupees). */
+export function formatINR(num: number | null | undefined): string {
+  if (num === null || num === undefined || !Number.isFinite(num)) return "—";
+  return (num < 0 ? "−₹" : "₹") + formatIndianNumber(Math.abs(num));
+}
+
+/** ₹25L, ₹1.2Cr, ₹45K */
+export function formatINRShort(num: number | null | undefined): string {
+  if (num === null || num === undefined || !Number.isFinite(num)) return "—";
+  const abs = Math.abs(num);
+  const sign = num < 0 ? "−" : "";
+  const fmt = (x: number) => (x >= 100 || x % 1 === 0 ? x.toFixed(0) : x.toFixed(1).replace(/\.0$/, ""));
+  if (abs >= 1e7) return `${sign}₹${fmt(abs / 1e7)}Cr`;
+  if (abs >= 1e5) return `${sign}₹${fmt(abs / 1e5)}L`;
+  if (abs >= 1e3) return `${sign}₹${fmt(abs / 1e3)}K`;
+  return `${sign}₹${Math.round(abs)}`;
 }

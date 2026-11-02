@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateRiskProfile } from '../lib/risk';
+import { deriveData } from '../lib/derive';
 
 describe('Risk Engine', () => {
   it('weighted tolerance sum works', () => {
@@ -42,25 +43,35 @@ describe('Risk Engine', () => {
   });
 
   it('finalScore === MIN(capacity, tolerance)', () => {
-    const profile = calculateRiskProfile({
-      dateOfBirth: '1995-01-01',
-      monthlyIncome: 200000,
+    // Capacity is computed from derived (household) figures, exactly as runAnalysis does.
+    const profile = calculateRiskProfile(deriveData({
+      dateOfBirth: '01/01/1995',
+      grossAnnualIncome: 2400000,
       monthlyExpenses: 50000,
-      totalMonthlyEMIs: 0,
-      bankSavingsFDValue: 600000, 
-      emergencyFundMonths: "6+",
-      occupationType: 'Salaried - Government',
+      bankSavingsFDValue: 600000,
+      occupationType: 'Salaried–Government',
       totalDependents: 0,
-      goalDetails: '[{"timeHorizon":"Long-term (7+ years)"}]',
-      investmentExperience: '["Mutual Funds"]',
       riskQ1: 1, riskQ2: 1, riskQ3: 1, riskQ4: 1, riskQ5: 1,
       riskQ6: 1, riskQ7: 1, riskQ8: 1, riskQ9: 1, riskQ10: 1,
       riskQ11: 1, riskQ12: 1, riskQ13: 1, riskQ14: 1
-    });
-    
+    }));
+
     expect(profile.capacityScore).toBeGreaterThan(60);
     expect(profile.toleranceScore).toBe(20);
     expect(profile.finalScore).toBe(20);
+  });
+
+  it("honours the stored riskQ3NoHistory flag (I wasn't investing then)", () => {
+    // Q1/Q2 high, Q3 neutral: moving Q3's weight onto Q1/Q2 must raise the score.
+    const base = { riskQ1: 5, riskQ2: 5, riskQ3: 3, riskQ4: 3, riskQ5: 3, riskQ6: 3, riskQ7: 3, riskQ8: 3, riskQ9: 3, riskQ10: 3, riskQ11: 3, riskQ12: 3, riskQ13: 3, riskQ14: 3 };
+    const noHistory = calculateRiskProfile({ ...base, riskQ3NoHistory: true }).toleranceScore;
+    const stoppedSips = calculateRiskProfile({ ...base, riskQ3NoHistory: false }).toleranceScore;
+    expect(noHistory).toBeGreaterThan(stoppedSips);
+  });
+
+  it('ignores goals without a target year when judging horizon', () => {
+    const profile = calculateRiskProfile({ dateOfBirth: '01/01/1990', goalsList: [{ name: 'Other', targetYear: null, targetAmount: 0 }] });
+    expect(profile.capacityConstraint).not.toMatch(/Long time horizon/);
   });
 
   it('band boundaries at exactly 20, 40, 60, 80', () => {

@@ -11,7 +11,6 @@ export function runSanityCheck(derived: any, computed: { totalAssets: number, to
   const netWorth = computed.totalAssets - computed.totalLiabilities;
   const emi = derived.totalMonthlyEMIs || 0;
   const expenses = derived.monthlyExpenses || 0;
-  const surplus = (income / 12) - expenses - emi;
   
   if (income > 0 && emi > 0) {
     const emiBurden = (emi / (income / 12)) * 100;

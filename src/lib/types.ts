@@ -46,6 +46,9 @@ export interface HealthMetricResult {
 }
 
 export interface AnalysisResult {
+  /** Engine version that produced this result (see ANALYSIS_VERSION). */
+  analysisVersion?: number;
+
   // Snapshot
   netWorth: number;
   totalAssets: number;

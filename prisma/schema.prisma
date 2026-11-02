@@ -187,6 +187,7 @@ model Submission {
   riskQ13                Int?
   riskQ14                Int?
   riskQ15                String?  // optional free text for past experience
+  riskQ3NoHistory        Boolean? // Q3 answered "I wasn't investing then" (score 3, weight redistributed)
 
   // ========================================
   // SECTION H: Wrap-up
@@ -198,7 +199,9 @@ model Submission {
   // Advisor-side fields
   // ========================================
   advisorNotes  AdvisorNote[]
-  analysisJson  String?  // cached JSON output of the analysis engine
+  analysisJson  String?  // cached JSON output of the analysis engine (versioned, see lib/analysis-cache.ts)
+
+  @@index([status])
 }
 
 // Advisor notes on a submission

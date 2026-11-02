@@ -33,7 +33,7 @@ describe('Derivation Layer', () => {
     };
     const res = deriveData(sub);
     // 150k / 50k = 3
-    expect(res.emergencyFundMonths).toBe("1-3");
+    expect(res.emergencyFundMonths).toBe("1–3 months");
     expect(res.emergencyFundMonths_source).toBe('derived');
   });
 
