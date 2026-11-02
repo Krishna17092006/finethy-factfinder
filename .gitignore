@@ -55,3 +55,6 @@ next-env.d.ts
 # end-to-end test database
 prisma/e2e.db
 prisma/e2e.db-journal
+
+# private business files (letterhead with PAN/GSTIN): kept locally, never committed
+/private/

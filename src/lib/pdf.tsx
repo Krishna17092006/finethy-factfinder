@@ -44,7 +44,13 @@ export async function generatePdfBuffer(submission: any, analysis: AnalysisResul
   
   try {
     const { PDFDocument } = await import('pdf-lib');
-    const letterheadPath = path.join(process.cwd(), 'public', 'Finethy - Letterhead.pdf');
+    // The letterhead carries the firm's PAN/GSTIN, so it lives outside Git and outside
+    // public/ (never served on the website). Override with LETTERHEAD_PDF if needed.
+    const letterheadPath = [
+      process.env.LETTERHEAD_PDF,
+      path.join(process.cwd(), 'private', 'letterhead.pdf'),
+      path.join(process.cwd(), 'public', 'Finethy - Letterhead.pdf'), // older installs
+    ].find((p): p is string => !!p && fs.existsSync(p)) ?? '';
     
     if (fs.existsSync(letterheadPath)) {
       const generatedDoc = await PDFDocument.load(pdfStream);

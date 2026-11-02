@@ -56,6 +56,13 @@ says so.
 
 Never commit `.env`. It is git-ignored.
 
+### Letterhead (not in Git)
+
+The PDF letterhead contains the firm's PAN and GSTIN, so it is **not** in this
+repository. Put the letterhead PDF at `private/letterhead.pdf` (the folder is
+git-ignored), or point `LETTERHEAD_PDF` at it. Without it, reports are generated
+without the letterhead.
+
 ## Checks and tests
 
 ```bash
@@ -107,7 +114,7 @@ npm start            # port 3000; put HTTPS in front (Caddy, Nginx, or the host'
 | Health thresholds | `src/config/healthRanges.ts` |
 | Calculations | `src/lib/derive.ts` (single source of derived numbers) → `analysis.ts` (13 measures) and `risk.ts` (capacity / tolerance) → `report.ts` (brief, questions) |
 | Stored results | `src/lib/analysis-cache.ts`. Results carry `ANALYSIS_VERSION`; bump it when the maths changes and old reports recompute themselves. |
-| PDF | `src/components/report` + `src/lib/pdf.tsx` (letterhead from `public/Finethy - Letterhead.pdf`) |
+| PDF | `src/components/report` + `src/lib/pdf.tsx` (letterhead from `private/letterhead.pdf`, see below) |
 | Security | `src/middleware.ts` (guards `/advisor` and `/api/advisor`), `src/lib/auth/session.ts`, `src/lib/intake-schema.ts` (what a client may write) |
 
 ### Security model
