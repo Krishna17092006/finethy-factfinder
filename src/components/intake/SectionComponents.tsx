@@ -467,7 +467,7 @@ export function SectionLiabilities({ data, updateData }: SectionProps) {
                   {cat.descKey && (
                     <div className="space-y-2">
                       <Label className="text-xs text-brand-mutedText">Description</Label>
-                      <LocalInput className="h-10 focus-visible:ring-brand-cyan" value={data[cat.descKey] || ''} onChange={e => updateData({ [cat.descKey]: e.target.value })} placeholder="e.g. Gold loan" />
+                      <LocalInput className="h-10 focus-visible:ring-brand-cyan" value={data[cat.descKey] || ''} onChange={v => updateData({ [cat.descKey as string]: v })} placeholder="e.g. Gold loan" />
                     </div>
                   )}
                 </div>
@@ -654,8 +654,8 @@ export function SectionGoals({ data, updateData }: SectionProps) {
                         inputMode="numeric" 
                         className="h-10 focus-visible:ring-brand-cyan" 
                         value={data.retirementAge || ''} 
-                        onChange={e => {
-                          const raw = e.target.value.replace(/[^0-9]/g, '');
+                        onChange={v => {
+                          const raw = v.replace(/[^0-9]/g, '');
                           updateData({ retirementAge: raw === '' ? null : parseInt(raw, 10) });
                         }} 
                         placeholder="e.g. 60"

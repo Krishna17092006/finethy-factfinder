@@ -39,7 +39,7 @@ export function IntakeForm({ token, initialData }: { token: string, initialData:
   const submitRef = useRef(false);
 
   // Active time tracking
-  const [activeTimeSeconds, setActiveTimeSeconds] = useState(
+  const [activeTimeSeconds, setActiveTimeSeconds] = useState<number>(
     initialData?.activeTimeSeconds || 0
   );
 

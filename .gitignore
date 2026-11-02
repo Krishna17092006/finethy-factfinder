@@ -26,6 +26,7 @@ yarn-error.log*
 # env files
 .env
 .env.*
+!.env.example
 
 # prisma
 prisma/dev.db
@@ -38,4 +39,12 @@ prisma/dev.db-journal
 *.tsbuildinfo
 next-env.d.ts
 
-powershell.cmd
+
+# e2e testing
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# local database backups
+*.db.bak
