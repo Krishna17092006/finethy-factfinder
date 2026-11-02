@@ -1,373 +1,356 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { INTAKE_SECTIONS } from '@/lib/types';
-import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Save, WifiOff, Send, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { Check, CloudOff, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { cn } from "@/lib/utils";
+import { isValidMobile } from "@/lib/validators";
+import { parseDateOfBirth } from "@/lib/utils";
+import { STEPS, type FormData } from "./steps";
+import {
+  SectionAssets,
+  SectionGoals,
+  SectionIncome,
+  SectionInsurance,
+  SectionLiabilities,
+  SectionPersonal,
+  SectionRisk,
+  SectionWrapUp,
+} from "./sections";
 
-import { 
-  SectionPersonal, 
-  SectionIncome, 
-  SectionAssets, 
-  SectionLiabilities, 
-  SectionInsurance, 
-  SectionGoals, 
-  SectionRiskTolerance1,
-  SectionRiskTolerance2,
-  SectionRiskTolerance3, 
-  SectionWrapUp 
-} from './SectionComponents';
+type SaveState = "idle" | "saving" | "saved" | "offline";
 
-export function IntakeForm({ token, initialData }: { token: string, initialData: any }) {
-  const [data, setData] = useState<any>(initialData || {});
-  
-  // -1 represents the Welcome screen
-  const [currentStep, setCurrentStep] = useState(
-    initialData?.currentStep !== undefined ? initialData.currentStep : -1
-  );
-  
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  
-  // Prevent double submit
-  const submitRef = useRef(false);
+const LAST = STEPS.length - 1;
+const storageKey = (token: string) => `ff-intake:${token}`;
 
-  // Active time tracking
-  const [activeTimeSeconds, setActiveTimeSeconds] = useState<number>(
-    initialData?.activeTimeSeconds || 0
-  );
+function readBackup(token: string): FormData | null {
+  try {
+    const raw = window.localStorage.getItem(storageKey(token));
+    return raw ? (JSON.parse(raw) as FormData) : null;
+  } catch {
+    return null;
+  }
+}
+function writeBackup(token: string, pending: FormData) {
+  try {
+    if (Object.keys(pending).length) window.localStorage.setItem(storageKey(token), JSON.stringify(pending));
+    else window.localStorage.removeItem(storageKey(token));
+  } catch {
+    // storage unavailable (private mode): autosave to the server still works
+  }
+}
 
-  useEffect(() => {
-    // Only track if form is not submitted
-    if (initialData?.status === 'submitted' || showCelebration) return;
+export function IntakeForm({ token, initial }: { token: string; initial: FormData }) {
+  const router = useRouter();
+  const [data, setData] = React.useState<FormData>(initial);
+  const [step, setStep] = React.useState<number>(() => {
+    const s = typeof initial.currentStep === "number" ? initial.currentStep : -1;
+    // Drafts created before the welcome screen existed start at 0 with no activity.
+    if (s === 0 && !initial.activeTimeSeconds) return -1;
+    return Math.min(Math.max(s, -1), LAST);
+  });
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [saveState, setSaveState] = React.useState<SaveState>("idle");
+  const [submitting, setSubmitting] = React.useState(false);
 
-    const interval = setInterval(() => {
-      if (document.hasFocus()) {
-        setActiveTimeSeconds(prev => prev + 1);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [initialData?.status, showCelebration]);
+  const pending = React.useRef<FormData>({});
+  const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inflight = React.useRef(false);
+  const activeSeconds = React.useRef<number>(initial.activeTimeSeconds || 0);
+  const headingRef = React.useRef<HTMLHeadingElement>(null);
+  const stepperRef = React.useRef<HTMLOListElement>(null);
 
-  const currentSection = currentStep >= 0 ? INTAKE_SECTIONS[currentStep] : null;
-  const progressPercent = currentStep >= 0 ? (currentStep / INTAKE_SECTIONS.length) * 100 : 0;
-  
-  const getProgressCopy = () => {
-    if (currentStep < 0) return "Let's begin!";
-    if (progressPercent < 25) return "Great start!";
-    if (progressPercent < 50) return "Keep going!";
-    if (progressPercent < 75) return "Halfway there!";
-    if (progressPercent < 90) return "Almost done!";
-    return "Last few questions!";
-  };
-  
-  const getEstimatedTime = () => {
-    const remainingSteps = INTAKE_SECTIONS.length - Math.max(0, currentStep);
-    return Math.max(1, Math.round((remainingSteps / INTAKE_SECTIONS.length) * 8));
-  };
+  /* ---------------- saving ---------------- */
 
-  // Offline grace & Autosave
-  const saveStep = async (stepData: any, nextStep: number, retryCount = 0): Promise<boolean> => {
-    setIsSaving(true);
-    setSaveStatus('saving');
+  const flush = React.useCallback(async (): Promise<boolean> => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    if (inflight.current) {
+      saveTimer.current = setTimeout(() => void flush(), 400);
+      return false;
+    }
+    const body = { ...pending.current, activeTimeSeconds: activeSeconds.current };
+    if (Object.keys(pending.current).length === 0) return true;
+    pending.current = {};
+    inflight.current = true;
+    setSaveState("saving");
     try {
       const res = await fetch(`/api/intake/${token}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...stepData, currentStep: nextStep, activeTimeSeconds }),
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error('Save failed');
-      
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2000);
-      return true;
-    } catch (e) {
-      console.error(e);
-      // Offline grace: retry up to 2 times
-      if (retryCount < 2) {
-        await new Promise(r => setTimeout(r, 1000));
-        return saveStep(stepData, nextStep, retryCount + 1);
-      } else {
-        setSaveStatus('error');
-        // We don't block the user, they can still proceed, we'll try saving again next time
-        toast.warning('Working offline. Answers saved on your device.', { icon: <WifiOff className="w-4 h-4" /> });
+      if (res.status === 409) {
+        router.replace(`/intake/${token}/success`);
         return false;
       }
+      if (!res.ok) throw new Error(String(res.status));
+      writeBackup(token, pending.current);
+      setSaveState("saved");
+      return true;
+    } catch {
+      // Put the unsaved answers back and keep them on the device until the next try.
+      pending.current = { ...body, ...pending.current };
+      delete pending.current.activeTimeSeconds;
+      writeBackup(token, pending.current);
+      setSaveState("offline");
+      saveTimer.current = setTimeout(() => void flush(), 8000);
+      return false;
     } finally {
-      setIsSaving(false);
+      inflight.current = false;
     }
+  }, [router, token]);
+
+  const update = React.useCallback(
+    (patch: FormData) => {
+      setData((prev) => ({ ...prev, ...patch }));
+      Object.assign(pending.current, patch);
+      writeBackup(token, pending.current);
+      setErrors((prev) => {
+        const keys = Object.keys(patch).filter((k) => k in prev);
+        if (!keys.length) return prev;
+        const next = { ...prev };
+        keys.forEach((k) => delete next[k]);
+        return next;
+      });
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => void flush(), 1200);
+    },
+    [flush, token],
+  );
+
+  // Restore answers that never reached the server (closed tab, lost signal).
+  React.useEffect(() => {
+    const backup = readBackup(token);
+    if (backup && Object.keys(backup).length) {
+      setData((prev) => ({ ...prev, ...backup }));
+      pending.current = { ...backup, ...pending.current };
+      void flush();
+    }
+  }, [flush, token]);
+
+  // Save when the client switches app or closes the tab.
+  React.useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState !== "hidden" || !Object.keys(pending.current).length) return;
+      const body = JSON.stringify({ ...pending.current, activeTimeSeconds: activeSeconds.current });
+      fetch(`/api/intake/${token}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body, keepalive: true })
+        .then((r) => {
+          if (r.ok) {
+            pending.current = {};
+            writeBackup(token, {});
+          }
+        })
+        .catch(() => undefined);
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  }, [token]);
+
+  // Count active time (tab visible and focused) without re-rendering every second.
+  React.useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible" && document.hasFocus()) activeSeconds.current += 1;
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  /* ---------------- navigation ---------------- */
+
+  const goTo = (target: number) => {
+    const next = Math.min(Math.max(target, 0), LAST);
+    pending.current.currentStep = next;
+    void flush();
+    setStep(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    requestAnimationFrame(() => headingRef.current?.focus({ preventScroll: true }));
   };
 
-  const handleNext = async () => {
-    if (currentStep < INTAKE_SECTIONS.length - 1) {
-      // Don't wait strictly for save to finish to move UI, but trigger it
-      saveStep(data, currentStep + 1);
-      setCurrentStep((s: number) => s + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  React.useEffect(() => {
+    stepperRef.current
+      ?.querySelector<HTMLElement>('[aria-current="step"]')
+      ?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  }, [step]);
+
+  const personalErrors = (d: FormData) => {
+    const e: Record<string, string> = {};
+    if (!d.fullName || String(d.fullName).trim().length < 2) e.fullName = "Enter your full name.";
+    if (!isValidMobile(d.mobile)) e.mobile = "Enter a 10-digit mobile number, for example 98450 12345.";
+    if (d.dateOfBirth && !parseDateOfBirth(d.dateOfBirth)) e.dateOfBirth = "Use the format DD/MM/YYYY, for example 22/08/1982.";
+    return e;
   };
 
-  const handleBack = () => {
-    if (currentStep >= 0) {
-      setCurrentStep((s: number) => s - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const onNext = () => {
+    if (step === 0) {
+      const e = personalErrors(data);
+      if (Object.keys(e).length) {
+        setErrors(e);
+        document.getElementById(Object.keys(e)[0])?.focus();
+        return;
+      }
     }
+    goTo(step + 1);
   };
 
-  const handleSubmit = async () => {
-    if (submitRef.current) return;
-    
-    if (!data.fullName || !data.mobile) {
-      toast.error('Name and mobile are required (see Personal section)');
+  const onSubmit = async () => {
+    const e = personalErrors(data);
+    if (Object.keys(e).length) {
+      setErrors(e);
+      toast.error("Please check your name and mobile number on step 1.");
+      goTo(0);
       return;
     }
-    if (!data.consentGiven) {
-      toast.error('Please provide consent (see Wrap Up section)');
+    if (data.consentGiven !== true) {
+      setErrors({ consentGiven: "Tick this box so we can prepare your review." });
       return;
     }
-
-    submitRef.current = true;
-    setIsSubmitting(true);
-    
+    setSubmitting(true);
     try {
       const res = await fetch(`/api/intake/${token}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, activeTimeSeconds }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...pending.current, consentGiven: true, activeTimeSeconds: activeSeconds.current }),
       });
-      
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Submit failed');
-      }
-      
-      // Trigger celebration
-      setShowCelebration(true);
-      setTimeout(() => {
-        window.location.href = `/intake/${token}/success`;
-      }, 2000);
-      
-    } catch (e: any) {
-      console.error(e);
-      toast.error(e.message || 'Failed to submit form');
-      submitRef.current = false;
-      setIsSubmitting(false);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "We could not send your answers. Check your connection and try again.");
+      pending.current = {};
+      writeBackup(token, {});
+      router.replace(`/intake/${token}/success`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "We could not send your answers.");
+      setSubmitting(false);
     }
   };
 
-  const updateData = (updates: any) => {
-    setData((prev: any) => ({ ...prev, ...updates }));
-  };
+  /* ---------------- render ---------------- */
 
-  if (data.status === 'submitted' || showCelebration) {
+  const header = <SiteHeader right={<SaveIndicator state={saveState} />} />;
+
+  if (step === -1) {
     return (
-      <div className="max-w-md mx-auto text-center py-20 flex flex-col items-center justify-center space-y-6">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          className="h-24 w-24 bg-brand-health-green-bg rounded-full flex items-center justify-center"
-        >
-          <CheckCircle2 className="h-12 w-12 text-brand-health-green" />
-        </motion.div>
-        <motion.h2 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-3xl font-bold text-brand-darkText"
-        >
-          {showCelebration ? "Perfect! Sending..." : "Already Submitted"}
-        </motion.h2>
-      </div>
+      <>
+        {header}
+        <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10 sm:px-6 sm:py-16">
+          <h1 className="font-wide text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+            {data.fullName ? `Namaste, ${String(data.fullName).split(/\s+/)[0]}.` : "Namaste."}
+          </h1>
+          <p className="mt-5 text-lg leading-relaxed">
+            This form helps your FINETHY advisor understand your financial picture before you meet. There are 10 short
+            steps. Most people finish in about 10 minutes.
+          </p>
+          <ul className="mt-6 space-y-2 text-brand-bodyText">
+            <li>Approximate answers are perfectly fine. You don&apos;t need any documents.</li>
+            <li>Your answers save as you go. You can close this page and continue later on this device.</li>
+            <li>Only the FINETHY team sees what you share.</li>
+          </ul>
+          <Button variant="cta" size="lg" className="mt-9 w-full sm:w-auto" onClick={() => goTo(0)}>
+            Let&apos;s begin
+          </Button>
+        </main>
+      </>
     );
   }
 
-  const renderSection = () => {
-    switch (currentStep) {
-      case -1: return (
-        <div className="py-8 px-4 text-center space-y-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-blue-light mb-4">
-            <span className="text-3xl">🙏</span>
-          </div>
-          <h2 className="text-2xl font-bold text-brand-darkText">Namaste! Welcome to FINETHY.</h2>
-          <p className="text-brand-bodyText text-lg leading-relaxed max-w-md mx-auto">
-            This short form helps our team understand your financial picture before you meet. 
-            Everything you share is strictly confidential.
-          </p>
-          <div className="p-4 bg-[#f8f9fa] rounded-xl text-sm text-brand-mutedText border border-brand-border inline-block text-left max-w-sm">
-            <p>💡 <strong>Tip:</strong> Approximate answers are perfectly fine — no need to dig for exact documents right now.</p>
-          </div>
-        </div>
-      );
-      case 0: return <SectionPersonal data={data} updateData={updateData} />;
-      case 1: return <SectionIncome data={data} updateData={updateData} />;
-      case 2: return <SectionAssets data={data} updateData={updateData} />;
-      case 3: return <SectionLiabilities data={data} updateData={updateData} />;
-      case 4: return <SectionInsurance data={data} updateData={updateData} />;
-      case 5: return <SectionGoals data={data} updateData={updateData} />;
-      case 6: return <SectionRiskTolerance1 data={data} updateData={updateData} />;
-      case 7: return <SectionRiskTolerance2 data={data} updateData={updateData} />;
-      case 8: return <SectionRiskTolerance3 data={data} updateData={updateData} />;
-      case 9: return <SectionWrapUp data={data} updateData={updateData} />;
-      default: return null;
-    }
-  };
+  const current = STEPS[step];
 
   return (
-    <div className="max-w-2xl mx-auto w-full relative">
-      
-      {/* Sticky Header with Stepper */}
-      {currentStep >= 0 && (
-        <div className="sticky top-[73px] bg-white/90 backdrop-blur-md z-10 pb-4 pt-4 border-b border-slate-100 mb-6 rounded-b-xl px-4 shadow-sm flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-semibold text-brand-blue flex items-center gap-2">
-              {currentSection?.icon} {currentSection?.label}
-            </div>
-            
-            <div className="text-right flex items-center gap-2">
-              {/* Autosave Indicator */}
-              <AnimatePresence mode="wait">
-                {saveStatus === 'saving' && (
-                  <motion.div key="saving" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[10px] flex items-center text-slate-400">
-                    <Save className="w-3 h-3 mr-1 animate-pulse" /> saving...
-                  </motion.div>
-                )}
-                {saveStatus === 'saved' && (
-                  <motion.div key="saved" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-[10px] flex items-center text-green-500">
-                    <CheckCircle2 className="w-3 h-3 mr-1" /> saved
-                  </motion.div>
-                )}
-                {saveStatus === 'error' && (
-                  <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[10px] flex items-center text-red-400">
-                    <WifiOff className="w-3 h-3 mr-1" /> offline
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+    <>
+      {header}
 
-          {/* Horizontal Stepper */}
-          <div className="flex items-center w-full overflow-x-auto py-2 px-1 snap-x hide-scrollbar" style={{ scrollbarWidth: 'none' }}>
-            {INTAKE_SECTIONS.map((section, idx) => {
-              const isCompleted = idx < currentStep;
-              const isCurrent = idx === currentStep;
+      <nav aria-label="Form steps" className="sticky top-0 z-30 border-b border-brand-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+        <div className="mx-auto max-w-3xl px-2 sm:px-6">
+          <ol ref={stepperRef} className="hide-scrollbar flex gap-1 overflow-x-auto py-3">
+            {STEPS.map((s, i) => {
+              const done = s.isComplete(data);
+              const isCurrent = i === step;
               return (
-                <React.Fragment key={idx}>
-                  {/* Node */}
-                  <button 
-                    onClick={() => {
-                      saveStep(data, idx);
-                      setCurrentStep(idx);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    disabled={isSubmitting}
-                    title={section.label}
+                <li key={s.id} className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => goTo(i)}
+                    disabled={submitting}
+                    aria-current={isCurrent ? "step" : undefined}
+                    aria-label={`Step ${i + 1}: ${s.title}${done ? " (answered)" : ""}`}
+                    title={s.title}
                     className={cn(
-                      "relative flex items-center justify-center shrink-0 w-8 h-8 rounded-full border-2 transition-all duration-300",
-                      isCompleted ? "bg-brand-blue border-brand-blue text-white" : 
-                      isCurrent ? "border-brand-blue text-brand-blue ring-4 ring-brand-blue/10 bg-white" : 
-                      "border-slate-200 text-slate-400 bg-white hover:border-brand-blue/40"
+                      "tabular flex h-10 w-10 items-center justify-center rounded-full border-2 text-[15px] font-bold transition-colors",
+                      isCurrent
+                        ? "border-brand-blue bg-brand-blue text-white"
+                        : done
+                          ? "border-brand-blue/40 bg-brand-blue-light text-brand-blue"
+                          : "border-brand-border bg-white text-brand-mutedText hover:border-brand-blue/60",
                     )}
                   >
-                    {isCompleted ? <Check className="w-4 h-4" strokeWidth={3} /> : <span className="text-xs font-bold">{idx + 1}</span>}
+                    {done && !isCurrent ? <Check className="h-4 w-4" strokeWidth={3} aria-hidden /> : i + 1}
                   </button>
-                  
-                  {/* Line connecting nodes */}
-                  {idx < INTAKE_SECTIONS.length - 1 && (
-                    <div className={cn(
-                      "flex-1 min-w-[20px] h-[2px] transition-colors duration-300",
-                      isCompleted ? "bg-brand-blue" : "bg-slate-200"
-                    )} />
-                  )}
-                </React.Fragment>
+                </li>
               );
             })}
+          </ol>
+        </div>
+      </nav>
+
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-32 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
+        <p className="tabular text-[15px] font-semibold text-brand-orange-deep">
+          Step {step + 1} of {STEPS.length}
+        </p>
+        <h1 ref={headingRef} tabIndex={-1} className="mt-1 font-wide text-3xl font-bold tracking-tight outline-none sm:text-4xl">
+          {current.title}
+        </h1>
+
+        <div className="mt-6 rounded-xl border border-brand-border bg-white p-4 shadow-[0_1px_2px_rgba(27,36,51,0.06)] sm:p-7">
+          {step === 0 && <SectionPersonal data={data} update={update} errors={errors} />}
+          {step === 1 && <SectionIncome data={data} update={update} />}
+          {step === 2 && <SectionAssets data={data} update={update} />}
+          {step === 3 && <SectionLiabilities data={data} update={update} />}
+          {step === 4 && <SectionInsurance data={data} update={update} />}
+          {step === 5 && <SectionGoals data={data} update={update} />}
+          {step === 6 && <SectionRisk part={0} data={data} update={update} />}
+          {step === 7 && <SectionRisk part={1} data={data} update={update} />}
+          {step === 8 && <SectionRisk part={2} data={data} update={update} />}
+          {step === 9 && <SectionWrapUp data={data} update={update} errors={errors} />}
+        </div>
+
+        <div className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-brand-border bg-white px-4 pt-3 sm:static sm:mt-6 sm:border-0 sm:bg-transparent sm:p-0">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+            <Button variant="outline" size="lg" onClick={() => (step === 0 ? setStep(-1) : goTo(step - 1))} disabled={submitting}>
+              Back
+            </Button>
+            {step < LAST ? (
+              <Button size="lg" onClick={onNext} className="min-w-[9rem]">
+                Next<span className="hidden sm:inline">: {STEPS[step + 1].title.replace(/ \(\d of \d\)$/, "")}</span>
+              </Button>
+            ) : (
+              <Button variant="cta" size="lg" onClick={onSubmit} disabled={submitting} aria-busy={submitting}>
+                {submitting ? <Loader2 className="animate-spin" aria-hidden /> : null}
+                {submitting ? "Sending" : "Submit my answers"}
+              </Button>
+            )}
           </div>
         </div>
-      )}
+      </main>
+    </>
+  );
+}
 
-      {/* Main Form Content */}
-      <div className="bg-white sm:rounded-2xl sm:shadow-sm sm:border sm:border-brand-border p-6 mb-6 overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="min-h-[40vh]"
-          >
-            {renderSection()}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Footer Navigation */}
-      <div className="flex flex-col px-2 sm:px-0 mb-8 space-y-6">
-        {currentStep === -1 ? (
-          <div className="w-full">
-            <Button 
-              onClick={handleNext}
-              className="w-full sm:w-auto h-12 px-8 bg-brand-orange hover:bg-[#d97700] text-white text-base shadow-md"
-            >
-              Let&apos;s begin
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center justify-between w-full">
-              <Button 
-                variant="outline" 
-                onClick={handleBack}
-                disabled={isSubmitting}
-                className="h-12 px-6 border-slate-300 text-slate-600 hover:bg-slate-50 w-[120px]"
-              >
-                Back
-              </Button>
-              
-              {currentStep < INTAKE_SECTIONS.length - 1 ? (
-                <Button 
-                  onClick={handleNext}
-                  disabled={isSubmitting}
-                  className="h-12 px-8 bg-brand-blue hover:bg-brand-blue-dark shadow-md w-[120px]"
-                >
-                  Next Step
-                </Button>
-              ) : (
-                <Button 
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || !data.consentGiven}
-                  className={cn("h-12 px-4 sm:px-8 shadow-md text-white font-medium transition-colors w-[140px] sm:w-auto", 
-                    data.consentGiven 
-                      ? "bg-health-green hover:bg-green-600" 
-                      : "bg-slate-300 text-slate-500 cursor-not-allowed hover:bg-slate-300"
-                  )}
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center justify-center gap-2 w-full"><Send className="w-4 h-4 animate-bounce" /> Sending</span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2 w-full">Submit <CheckCircle2 className="w-4 h-4 hidden sm:inline" /></span>
-                  )}
-                </Button>
-              )}
-            </div>
-
-          </>
-        )}
-      </div>
-      
-      {/* Privacy Reassurance */}
-      <div className="text-center py-6 border-t border-slate-200 mt-6 mb-4">
-        <p className="text-xs text-brand-mutedText flex items-center justify-center gap-1.5">
-          <span className="text-brand-orange">🔒</span> Your information is encrypted and shared only with FINETHY LLP.
-        </p>
-      </div>
-    </div>
+function SaveIndicator({ state }: { state: SaveState }) {
+  return (
+    <p role="status" aria-live="polite" className="flex min-w-[6rem] items-center justify-end gap-1.5 text-sm text-brand-mutedText">
+      {state === "saving" ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Saving
+        </>
+      ) : state === "saved" ? (
+        <>
+          <Check className="h-4 w-4 text-health-green" aria-hidden /> Saved
+        </>
+      ) : state === "offline" ? (
+        <span className="flex items-center gap-1.5 text-health-yellow">
+          <CloudOff className="h-4 w-4" aria-hidden /> Saved on this device
+        </span>
+      ) : null}
+    </p>
   );
 }

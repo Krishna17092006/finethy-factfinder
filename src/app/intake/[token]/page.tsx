@@ -1,39 +1,34 @@
-import React from 'react';
-import { prisma } from '@/lib/db';
-import { notFound } from 'next/navigation';
-import { IntakeForm } from '@/components/intake/IntakeForm';
-import { FinethyHeader } from '@/components/brand/FinethyHeader';
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { IntakeForm } from "@/components/intake/IntakeForm";
+import { MessagePage } from "@/components/site/MessagePage";
+import { loadIntake } from "@/lib/intake-access";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Your fact-finder",
+  robots: { index: false, follow: false },
+};
 
 export default async function IntakePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  const result = await loadIntake(token);
 
-  const link = await prisma.intakeLink.findUnique({
-    where: { token },
-    include: { submission: true }
-  });
-
-  if (!link) return notFound();
-
-  let submission = link.submission;
-  
-  if (!submission) {
-    submission = await prisma.submission.create({
-      data: {
-        linkId: link.id,
-        status: 'draft',
-        fullName: link.clientName || null,
-        mobile: link.clientPhone || null,
-      }
-    });
+  if (!result.ok) {
+    return (
+      <MessagePage
+        title={result.status === 410 ? "This link has expired" : "We couldn't find this form"}
+        body={
+          result.status === 410
+            ? "Links stay open for a limited time. Ask your FINETHY advisor to send you a new one."
+            : "Check that you opened the full link from your message. If it still doesn't work, ask your FINETHY advisor for a new link."
+        }
+      />
+    );
   }
 
-  return (
-    <div className="min-h-screen bg-brand-page flex flex-col font-sans">
-      <FinethyHeader />
+  if (result.submission.status !== "draft") redirect(`/intake/${token}/success`);
 
-      <main className="flex-1 py-8 px-4 sm:px-6 flex items-center justify-center">
-        <IntakeForm token={token} initialData={submission} />
-      </main>
-    </div>
-  );
+  return <IntakeForm token={token} initial={result.clientView} />;
 }

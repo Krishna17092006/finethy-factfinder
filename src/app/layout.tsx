@@ -1,33 +1,35 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Anek_Latin } from "next/font/google";
 import { Toaster } from "sonner";
-import { FinethyFooter } from "@/components/layout/FinethyFooter";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], display: 'swap', variable: '--font-inter' });
+// Anek Latin (Ek Type, Mumbai). Self-hosted by next/font at build time, so it works offline.
+const anek = Anek_Latin({
+  subsets: ["latin", "latin-ext"],
+  axes: ["wdth"],
+  display: "swap",
+  variable: "--font-anek",
+});
 
 export const metadata: Metadata = {
-  title: "FINETHY Fact-Finder | Client Intake",
-  description:
-    "Pre-meeting client intake tool by FINETHY LLP. Fill your financial details before meeting your advisor.",
-  keywords: ["financial planning", "CFP", "FINETHY", "client intake"],
+  title: { default: "FINETHY Fact-Finder", template: "%s | FINETHY Fact-Finder" },
+  description: "Share your financial picture with FINETHY before your consultation. Takes about 10 minutes.",
+  applicationName: "FINETHY Fact-Finder",
+  icons: { icon: "/favicon.png" },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable}`}>
-      <head />
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#2f5aa8",
+};
 
-      <body className="min-h-screen flex flex-col font-sans">
-        <main className="flex-grow">
-          {children}
-        </main>
-        <FinethyFooter />
-        <Toaster position="top-center" richColors />
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en-IN" className={anek.variable}>
+      <body className="flex min-h-dvh flex-col">
+        {children}
+        <Toaster position="top-center" richColors closeButton />
       </body>
     </html>
   );

@@ -1,169 +1,95 @@
-
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
+    color-scheme: light;
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 218 31% 15%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 218 31% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 220 56% 42%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 32 92% 49%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 195 100% 47%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 220 56% 42%;
+    --popover-foreground: 218 31% 15%;
+    --primary: 219 56% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 216 33% 97%;
+    --secondary-foreground: 218 31% 15%;
+    --muted: 216 33% 97%;
+    --muted-foreground: 220 11% 40%;
+    --accent: 218 64% 95%;
+    --accent-foreground: 219 56% 42%;
+    --destructive: 0 74% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 216 27% 90%;
+    --input: 216 22% 82%;
+    --ring: 219 56% 42%;
     --radius: 0.625rem;
-
-    /* FINETHY BRAND - Light Mode */
-    --brand-blue: #2f5aa8;
-    --brand-orange: #f08a0c;
-    --brand-cyan: #00bbee;
-    --brand-darkText: #1f2531;
-    --brand-bodyText: #797e89;
-    --brand-muted: #aeb3bd;
-    --brand-border: #e0e0e0;
-    --brand-white: #ffffff; /* For explicit white elements */
-    --brand-card: #ffffff;
-    --brand-elevated: #ffffff;
-    --brand-page: #f8f9fa;
-    --brand-footerBg: #2d3340;
-
-    /* HEALTH COLORS */
-    --health-red: #ef4444;
-    --health-red-bg: #fef2f2;
-    --health-red-border: transparent;
-    --health-yellow: #eab308;
-    --health-yellow-bg: #fefce8;
-    --health-yellow-border: transparent;
-    --health-green: #22c55e;
-    --health-green-bg: #f0fdf4;
-    --health-green-border: transparent;
   }
-}
 
-
-
-
-@layer base {
   * {
     @apply border-border;
   }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 6rem;
+  }
+
   body {
-    background-color: var(--brand-page);
-    color: var(--brand-bodyText);
-    @apply font-sans antialiased transition-colors duration-150;
+    @apply bg-brand-page font-sans text-[17px] leading-relaxed text-brand-bodyText antialiased sm:text-base;
+    font-variation-settings: "wdth" 100;
+  }
+
+  h1, h2, h3, h4 {
+    @apply text-brand-darkText;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Visible keyboard focus everywhere */
+  :focus-visible {
+    outline: 2px solid #2f5aa8;
+    outline-offset: 2px;
+  }
+
+  /* Bigger tap targets for checkbox/radio labels on touch screens */
+  @media (pointer: coarse) {
+    input, select, textarea, button {
+      font-size: max(16px, 1em); /* stops iOS zooming into inputs */
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-/* Indian number formatting helper */
-.rupee-input::before {
-  content: '₹';
-  @apply text-brand-muted mr-1;
-}
-
-/* Health status pill styles */
-.health-green {
-  @apply bg-health-green-bg text-health-green;
-  border-left: 4px solid var(--health-green-border);
-}
-.health-yellow {
-  @apply bg-health-yellow-bg text-health-yellow;
-  border-left: 4px solid var(--health-yellow-border);
-}
-.health-red {
-  @apply bg-health-red-bg text-health-red;
-  border-left: 4px solid var(--health-red-border);
-}
-
-/* Row highlight for blood-report style */
-.row-green {
-  background-color: var(--health-green-bg);
-  border-left: 4px solid var(--health-green-border);
-}
-.row-yellow {
-  background-color: var(--health-yellow-bg);
-  border-left: 4px solid var(--health-yellow-border);
-}
-.row-red {
-  background-color: var(--health-red-bg);
-  border-left: 4px solid var(--health-red-border);
-}
-
-/* Progress bar animation */
-@keyframes progress-fill {
-  from { width: 0%; }
-  to { width: var(--progress-width); }
-}
-
-.progress-animated {
-  animation: progress-fill 0.5s ease-out forwards;
-}
-
-/* Smooth section transitions for the intake form */
-.section-enter {
-  animation: slideInRight 0.3s ease-out;
-}
-
-.section-exit {
-  animation: slideOutLeft 0.3s ease-out;
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
+@layer utilities {
+  .font-wide {
+    font-variation-settings: "wdth" 112;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+  .font-narrow {
+    font-variation-settings: "wdth" 90;
   }
-}
-
-@keyframes slideOutLeft {
-  from {
-    opacity: 1;
-    transform: translateX(0);
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
-  to {
-    opacity: 0;
-    transform: translateX(-30px);
+  .hide-scrollbar {
+    scrollbar-width: none;
   }
-}
-
-/* Mobile-optimized touch targets */
-@media (max-width: 640px) {
-  button, [role="button"], input[type="checkbox"], input[type="radio"] {
-    min-height: 44px;
-    min-width: 44px;
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
-}
-
-/* Chip styles for quick-select */
-.chip {
-  @apply inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
-    border border-brand-border cursor-pointer transition-all duration-200
-    hover:border-brand-blue hover:bg-slate-100;
-}
-
-.chip-selected {
-  @apply bg-brand-blue text-white border-brand-blue
-    hover:opacity-90;
-}
-
-/* Card hover effect */
-.card-hover {
-  @apply transition-all duration-200 hover:shadow-md hover:border-[#2f5aa8]/30;
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
 }

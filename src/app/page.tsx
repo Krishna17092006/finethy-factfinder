@@ -1,53 +1,79 @@
-import Link from "next/link";
-import { FinethyHeader } from "@/components/brand/FinethyHeader";
-import { Lock, Clock, Target } from "lucide-react";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { StartButton } from "@/components/site/StartButton";
+import { startIntake } from "./actions";
 
-export default function HomePage() {
+const TOPICS = [
+  { title: "You and your family", detail: "Who depends on your income" },
+  { title: "Income and expenses", detail: "Rough monthly figures are fine" },
+  { title: "What you own", detail: "Savings, funds, property, gold" },
+  { title: "What you owe", detail: "Loans, EMIs and card balances" },
+  { title: "Insurance", detail: "Life and health cover you already have" },
+  { title: "Your goals", detail: "What you are saving for, and by when" },
+  { title: "How you think about money", detail: "14 quick multiple-choice questions" },
+  { title: "Wrap-up", detail: "Anything you want to talk about" },
+];
+
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ busy?: string }> }) {
+  const { busy } = await searchParams;
+
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
-      <FinethyHeader />
-      
-      <main className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 min-h-[65vh]">
-        <div className="max-w-4xl w-full text-center flex flex-col items-center pt-8 sm:pt-12">
-          <h1 className="text-[28px] sm:text-[32px] lg:text-[44px] font-semibold text-brand-darkText tracking-tight leading-tight mb-6 sm:mb-8">
-            Your Financial Review Starts Here
-          </h1>
-          
-          <p className="text-[17px] sm:text-[18px] text-brand-bodyText max-w-[620px] mx-auto leading-relaxed mb-8 sm:mb-10">
-            Share a few details about your finances so our team can prepare a personalised review ahead of your consultation. It takes about 5–7 minutes, and your information stays completely confidential.
-          </p>
-          
-          <Link
-            href="/intake"
-            className="inline-flex items-center justify-center rounded-lg bg-brand-orange text-white px-8 py-3.5 text-base font-medium hover:bg-[#d97700] transition-colors shadow-sm mb-16 sm:mb-24"
-          >
-            Begin
-          </Link>
-          
-          {/* Trust Row */}
-          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-6 mb-12 sm:mb-16 pt-10 border-t border-slate-100 max-w-4xl">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <Lock className="w-5 h-5 text-brand-cyan" strokeWidth={2.5} />
-              <h3 className="font-semibold text-brand-darkText text-[15px]">Confidential</h3>
-              <p className="text-[14px] text-brand-bodyText leading-relaxed">Your information is encrypted and shared only with FINETHY.</p>
-            </div>
-            <div className="flex flex-col items-center text-center space-y-3">
-              <Clock className="w-5 h-5 text-brand-cyan" strokeWidth={2.5} />
-              <h3 className="font-semibold text-brand-darkText text-[15px]">5–7 minutes</h3>
-              <p className="text-[14px] text-brand-bodyText leading-relaxed">Short, simple questions. Approximate answers are fine.</p>
-            </div>
-            <div className="flex flex-col items-center text-center space-y-3">
-              <Target className="w-5 h-5 text-brand-cyan" strokeWidth={2.5} />
-              <h3 className="font-semibold text-brand-darkText text-[15px]">Better prepared</h3>
-              <p className="text-[14px] text-brand-bodyText leading-relaxed">Your consultation goes straight to what matters.</p>
-            </div>
+    <>
+      <SiteHeader />
+      <main className="flex-1">
+        <section className="mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-10 sm:px-6 sm:pt-16 lg:grid-cols-[1.1fr_1fr] lg:gap-20 lg:pb-24 lg:pt-24">
+          <div className="max-w-xl">
+            <h1 className="font-wide text-[2.5rem] font-bold leading-[1.05] tracking-[-0.02em] sm:text-6xl">
+              Before we meet, tell us where you stand.
+            </h1>
+            <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-brand-bodyText">
+              Answer a few short questions about your money so your FINETHY advisor can prepare a personal review
+              before your consultation. It takes about 10 minutes, and approximate answers are perfectly fine.
+            </p>
+
+            {busy ? (
+              <p role="alert" className="mt-6 rounded-lg border border-health-yellow-line bg-health-yellow-bg px-4 py-3 text-[15px] text-health-yellow">
+                Too many forms were started from this connection. Wait a few minutes, then try again.
+              </p>
+            ) : null}
+
+            <form action={startIntake} className="mt-8">
+              <StartButton />
+            </form>
+
+            <ul className="mt-10 space-y-3 text-[15px] text-brand-bodyText">
+              <li className="flex gap-3">
+                <Dot />
+                Your answers save as you go, so you can stop and come back on the same device.
+              </li>
+              <li className="flex gap-3">
+                <Dot />
+                Only the FINETHY team sees what you share.
+              </li>
+            </ul>
           </div>
-          
-          <div className="text-[13px] text-brand-mutedText">
-            FINETHY LLP · AMFI-registered Mutual Fund Distributor · ARN-28883
+
+          <div className="lg:pt-3">
+            <h2 className="text-lg font-semibold">What we will ask about</h2>
+            <ol className="mt-5 border-t border-brand-border">
+              {TOPICS.map((t, i) => (
+                <li key={t.title} className="grid grid-cols-[2.25rem_1fr] items-baseline gap-x-3 border-b border-brand-border py-3.5">
+                  <span className="tabular font-wide text-lg font-bold text-brand-orange-deep">{i + 1}</span>
+                  <span>
+                    <span className="block font-semibold text-brand-darkText">{t.title}</span>
+                    <span className="block text-[15px] text-brand-mutedText">{t.detail}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
-        </div>
+        </section>
       </main>
-    </div>
+      <SiteFooter />
+    </>
   );
+}
+
+function Dot() {
+  return <span aria-hidden className="mt-[0.6em] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-orange" />;
 }
