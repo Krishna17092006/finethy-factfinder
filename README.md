@@ -60,9 +60,9 @@ Never commit `.env`. It is git-ignored.
 
 ```bash
 npm run check        # type check + lint + unit tests
-npm test             # unit tests only (Vitest, 46 tests)
+npm test             # unit tests only (Vitest, 49 tests)
 npm run build        # production build
-npm run test:e2e     # browser tests (Playwright); run `npm run build` first
+npm run test:e2e     # browser tests (Playwright, 17 tests); run `npm run build` first
 ```
 
 - **Unit tests** (`src/__tests__`) cover the finance engines, the risk engine, input

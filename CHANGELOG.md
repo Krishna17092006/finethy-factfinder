@@ -41,6 +41,8 @@ automated test where it can be.
 - Stored reports are versioned and recompute automatically after fixes.
 
 ### PDF
+- PDF generation crashed for every client with no loans (italic "No liabilities
+  recorded" had no font), so those advisors got no email and no download.
 - 11 pages with four near-empty overflow pages became 8 full pages. Headings stay
   with their content, and the notes page fits one page.
 
