@@ -11,7 +11,7 @@ test.describe("Advisor", () => {
     await page.getByLabel(/Client name/).fill("Ravi Kumar");
     await page.getByLabel(/Mobile number/).fill("9876543210");
     await page.getByRole("button", { name: "Create link" }).click();
-    const linkField = page.getByLabel("Client link");
+    const linkField = page.getByRole("textbox", { name: "Client link" });
     await expect(linkField).toHaveValue(/\/intake\/[\w-]{20,}$/);
     await expect(page.getByRole("link", { name: "Send on WhatsApp" })).toHaveAttribute("href", /wa\.me\/919876543210\?text=Namaste%20Ravi/);
     const clientUrl = await linkField.inputValue();
@@ -25,7 +25,7 @@ test.describe("Advisor", () => {
     await client.close();
 
     // The submitted report from the client journey
-    await page.getByRole("button", { name: /^New/ }).click();
+    await page.getByRole("button", { name: /^New \d+$/ }).click();
     await page.getByRole("link", { name: "Open report" }).first().click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Asha Rao/i);
     await expect(page.getByRole("heading", { name: /Needs attention/ })).toBeVisible();
@@ -34,7 +34,7 @@ test.describe("Advisor", () => {
     await expect(page.getByText("₹11L").first()).toBeVisible();
 
     // Answers are shown with the real question text
-    await page.getByText("How they think about money", { exact: true }).click();
+    await page.locator("summary", { hasText: "How they think about money" }).click();
     await expect(page.getByText(/Your ₹10,00,000 investment falls/)).toBeVisible();
 
     // Notes
@@ -43,7 +43,7 @@ test.describe("Advisor", () => {
     await expect(page.getByText("Called to confirm the meeting on Friday.")).toBeVisible();
 
     // Status workflow
-    await page.getByLabel("Status").selectOption("reviewed");
+    await page.getByLabel("Status", { exact: true }).selectOption("reviewed");
     await expect(page.getByText(/Marked as reviewed/)).toBeVisible();
 
     // PDF download
@@ -61,7 +61,7 @@ test.describe("Advisor", () => {
 
     // Dashboard reflects the new status, and the filter lives in the URL
     await page.goto("/advisor?tab=reviewed");
-    await expect(page.getByRole("button", { name: /^Reviewed/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: /^Reviewed \d+$/ })).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("link", { name: /Asha Rao/i })).toBeVisible();
 
     // Sign out ends the session

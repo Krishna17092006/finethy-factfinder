@@ -274,11 +274,25 @@ export function YesNo({
   legend: React.ReactNode;
   hint?: React.ReactNode;
 }) {
+  // A <legend> nested in a <div> does not name the fieldset, so the group is
+  // labelled explicitly (screen readers announce "Is your spouse also earning?, group").
+  const labelId = React.useId();
+  const hintId = React.useId();
   return (
-    <fieldset className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <fieldset
+      aria-labelledby={labelId}
+      aria-describedby={hint ? hintId : undefined}
+      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
       <div>
-        <legend className="font-semibold text-brand-darkText">{legend}</legend>
-        {hint ? <p className="text-[15px] text-brand-mutedText">{hint}</p> : null}
+        <p id={labelId} className="font-semibold text-brand-darkText">
+          {legend}
+        </p>
+        {hint ? (
+          <p id={hintId} className="text-[15px] text-brand-mutedText">
+            {hint}
+          </p>
+        ) : null}
       </div>
       <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:w-52">
         {[

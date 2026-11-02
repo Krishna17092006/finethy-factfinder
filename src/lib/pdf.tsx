@@ -17,9 +17,13 @@ export async function generatePdfBuffer(submission: any, analysis: AnalysisResul
 
       Font.register({
         family: 'NotoSans',
+        // No italic TTF ships with the app; map italic to the upright faces so any
+        // italic style (e.g. "No liabilities recorded") renders instead of crashing.
         fonts: [
           { src: regularPath, fontWeight: 'normal', fontStyle: 'normal' },
-          { src: boldPath, fontWeight: 'bold', fontStyle: 'normal' }
+          { src: boldPath, fontWeight: 'bold', fontStyle: 'normal' },
+          { src: regularPath, fontWeight: 'normal', fontStyle: 'italic' },
+          { src: boldPath, fontWeight: 'bold', fontStyle: 'italic' }
         ]
       });
       fontsRegistered = true;

@@ -21,8 +21,8 @@ test("client completes the fact-finder end to end", async ({ page }) => {
 
   await page.getByLabel(/Full name/).fill("Asha Rao");
   await page.getByLabel(/Mobile number/).fill("9845012345");
-  await page.getByLabel("Date of birth").fill("15051988");
-  await expect(page.getByLabel("Date of birth")).toHaveValue("15/05/1988");
+  await page.getByLabel("Date of birth", { exact: true }).fill("15051988");
+  await expect(page.getByLabel("Date of birth", { exact: true })).toHaveValue("15/05/1988");
   await page.getByLabel("Marital status").selectOption("Married");
   await answer(page, "Is your spouse also earning?", "Yes");
   await page.getByLabel(/Spouse's yearly income/).fill("900000");
@@ -54,7 +54,7 @@ test("client completes the fact-finder end to end", async ({ page }) => {
   await answer(page, "Property other than your home", "No");
   await answer(page, "Gold and jewellery", "No");
   await answer(page, "Anything else (business, crypto, etc.)", "No");
-  await page.getByLabel("Your home").selectOption("Renting");
+  await page.getByLabel("Your home", { exact: true }).selectOption("Renting");
   await expect(page.getByText("₹11,00,000")).toBeVisible(); // 6L + 3L + 2L
   await next(page);
 
